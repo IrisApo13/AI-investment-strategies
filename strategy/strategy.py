@@ -116,13 +116,24 @@ class InvestmentStrategy:
             entry_price: Entry price for profit/loss calculations
             
         Returns:
-            True if all conditions are met
+            True if any condition is met (OR logic for multiple conditions)
+            For explicit AND conditions (single condition with "AND"), all parts must be true
         """
         try:
+            if not conditions:
+                return False
+            
+            # If there's only one condition, evaluate it directly
+            if len(conditions) == 1:
+                return self._evaluate_single_condition(row, conditions[0], entry_price)
+            
+            # For multiple conditions, use OR logic (any condition can trigger)
+            # This makes strategies more likely to generate signals
             for condition in conditions:
-                if not self._evaluate_single_condition(row, condition, entry_price):
-                    return False
-            return True
+                if self._evaluate_single_condition(row, condition, entry_price):
+                    return True
+            
+            return False
             
         except Exception as e:
             logger.warning(f"Error evaluating conditions: {str(e)}")
@@ -142,6 +153,9 @@ class InvestmentStrategy:
         """
         try:
             condition = condition.strip()
+            
+            # Clean up the condition - extract just the executable part
+            condition = self._clean_condition(condition)
             
             # Handle OR conditions
             if ' OR ' in condition.upper():
@@ -163,6 +177,51 @@ class InvestmentStrategy:
         except Exception as e:
             logger.warning(f"Error evaluating condition '{condition}': {str(e)}")
             return False
+    
+    def _clean_condition(self, condition: str) -> str:
+        """Clean up condition string to extract just the executable part."""
+        try:
+            # Remove common explanation phrases
+            cleanup_patterns = [
+                r'\s+(to\s+.*)$',  # Remove "to identify oversold conditions..."
+                r'\s+(for\s+.*)$',  # Remove "for better entry points..."
+                r'\s+(indicating\s+.*)$',  # Remove "indicating a stronger potential..."
+                r'\s+(as\s+.*)$',  # Remove "as this suggests..."
+                r'\s+(which\s+.*)$',  # Remove "which means..."
+                r'\s+(when\s+.*)$',  # Remove explanatory "when" clauses
+                r'\s*\([^)]*\)$',  # Remove parenthetical explanations at end
+            ]
+            
+            original_condition = condition
+            for pattern in cleanup_patterns:
+                condition = re.sub(pattern, '', condition, flags=re.IGNORECASE)
+            
+            # Extract just the first comparison if there are multiple explanations
+            # Look for patterns like "RSI < 30" or "Close > SMA_20 * 1.02"
+            comparison_patterns = [
+                r'^([A-Za-z_][A-Za-z0-9_]*\s*[<>=]+\s*[A-Za-z0-9_.*\s]+?)(?:\s+[a-z]+|$)',
+                r'^([A-Za-z_][A-Za-z0-9_]*\s*[<>=!]+\s*[\d.]+)(?:\s+[a-z]+|$)',
+            ]
+            
+            for pattern in comparison_patterns:
+                match = re.match(pattern, condition, re.IGNORECASE)
+                if match:
+                    condition = match.group(1).strip()
+                    break
+            
+            # If we cleaned too much and lost the condition, use original
+            if not any(op in condition for op in ['<', '>', '=']):
+                logger.warning(f"Over-cleaned condition '{original_condition}' -> '{condition}', using original")
+                condition = original_condition
+            
+            if condition != original_condition:
+                logger.debug(f"Cleaned condition: '{original_condition}' -> '{condition}'")
+            
+            return condition.strip()
+            
+        except Exception as e:
+            logger.warning(f"Error cleaning condition '{condition}': {str(e)}")
+            return condition
     
     def _evaluate_profit_loss_condition(self, row: pd.Series, condition: str, entry_price: float) -> bool:
         """Evaluate profit/loss conditions."""
