@@ -19,7 +19,7 @@ class Config:
     SLIPPAGE = 0.0005  # 0.05% slippage
     
     # Data Configuration
-    DEFAULT_PERIOD = "10y"  # Default data period
+    DEFAULT_PERIOD = "2y"  # Default data period
     DATA_INTERVAL = "1d"  # Daily data
     
     # Strategy Configuration

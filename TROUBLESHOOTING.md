@@ -45,14 +45,17 @@
 **Error:** No signals generated (0 buy/sell signals)
 
 **Possible causes:**
-- Strategy conditions are too restrictive
-- Data doesn't meet the strategy criteria
+- Strategy conditions are too restrictive (e.g., "RSI < 30 AND Close > SMA_20")
+- Data doesn't meet the strategy criteria  
 - Technical indicators have insufficient data (need >50 days for some indicators)
+- ⚠️ **FIXED**: Previous bug where days_since_last_action prevented any signals
 
 **Solutions:**
-- Try with a different ticker
-- Use longer data periods
+- ✅ **Bug Fixed**: Updated signal generation logic to allow first signal
+- Try with a different ticker that has more volatile price action
+- Use longer data periods (6+ months recommended)
 - The AI will typically improve strategies in subsequent iterations
+- Test with simpler conditions first (e.g., "RSI < 50" instead of "RSI < 30")
 
 ### 5. Performance Issues
 

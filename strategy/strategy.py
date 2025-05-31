@@ -56,25 +56,40 @@ class InvestmentStrategy:
             signals['position_size'] = 0.0
             
             # Track position state for profit/loss calculations
-            position_price = None
-            in_position = False
+            position_entries = []  # List of (date, price) tuples for open positions
+            last_action_date = None
+            min_hold_days = 1  # Minimum days between actions
             
             for i, (date, row) in enumerate(data.iterrows()):
-                # Check buy conditions
-                if not in_position and self._evaluate_conditions(row, self.buy_conditions):
+                # Calculate days since last action
+                days_since_last_action = min_hold_days  # Default to allow first action
+                if last_action_date is not None:
+                    days_since_last_action = (date - last_action_date).days
+                
+                # Check buy conditions - allow multiple positions
+                if (self._evaluate_conditions(row, self.buy_conditions) and
+                    days_since_last_action >= min_hold_days and
+                    len(position_entries) < 3):  # Max 3 overlapping positions
+                    
                     signals.loc[date, 'buy_signal'] = True
                     signals.loc[date, 'position_size'] = self.position_size
-                    position_price = row['Close']
-                    in_position = True
+                    position_entries.append((date, row['Close']))
+                    last_action_date = date
                     logger.debug(f"BUY signal generated on {date} at ${row['Close']:.2f}")
                 
-                # Check sell conditions (including profit/loss conditions)
-                elif in_position and self._evaluate_conditions(row, self.sell_conditions, position_price):
-                    signals.loc[date, 'sell_signal'] = True
-                    signals.loc[date, 'position_size'] = self.position_size
-                    in_position = False
-                    logger.debug(f"SELL signal generated on {date} at ${row['Close']:.2f}")
-                    position_price = None
+                # Check sell conditions - close oldest position if conditions met
+                elif (position_entries and 
+                      days_since_last_action >= min_hold_days):
+                    
+                    # Check sell conditions for the oldest position
+                    oldest_entry_date, oldest_entry_price = position_entries[0]
+                    
+                    if self._evaluate_conditions(row, self.sell_conditions, oldest_entry_price):
+                        signals.loc[date, 'sell_signal'] = True
+                        signals.loc[date, 'position_size'] = self.position_size
+                        position_entries.pop(0)  # Remove the oldest position
+                        last_action_date = date
+                        logger.debug(f"SELL signal generated on {date} at ${row['Close']:.2f}")
             
             num_buy_signals = signals['buy_signal'].sum()
             num_sell_signals = signals['sell_signal'].sum()

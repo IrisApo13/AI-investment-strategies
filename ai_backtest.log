@@ -7469,3 +7469,45 @@
 2025-05-31 08:59:01,352 - strategy.strategy - WARNING - Could not evaluate expression: 35, adjusted for lower volatility environments to improve entry points in mean reversion scenarios
 2025-05-31 08:59:01,352 - strategy.strategy - INFO - Generated 0 buy signals and 0 sell signals
 2025-05-31 08:59:01,511 - backtesting.evaluator - INFO - Performance evaluation complete. Score: 20.0
+2025-05-31 09:02:25,162 - llm.client - INFO - Initialized LLM client with model: gpt-4-turbo-preview
+2025-05-31 09:02:25,162 - core.orchestrator - INFO - AI Backtest Orchestrator initialized
+2025-05-31 09:02:25,162 - core.orchestrator - INFO - Starting backtesting session for AAPL
+2025-05-31 09:02:25,162 - core.orchestrator - INFO - Initializing session for AAPL
+2025-05-31 09:02:25,784 - data.stock_data - INFO - Fetching data for AAPL (2y)
+2025-05-31 09:02:25,976 - data.stock_data - INFO - Retrieved 502 days of data for AAPL
+2025-05-31 09:02:25,976 - data.stock_data - INFO - Calculating technical indicators...
+2025-05-31 09:02:25,982 - data.stock_data - INFO - Added technical indicators. Final dataset has 453 rows
+2025-05-31 09:02:26,042 - core.orchestrator - INFO - Session initialized. Retrieved 453 days of data
+2025-05-31 09:02:26,042 - core.orchestrator - INFO - === ITERATION 1 ===
+2025-05-31 09:02:26,042 - core.orchestrator - INFO - Generating initial strategy
+2025-05-31 09:02:26,043 - llm.prompts - INFO - Created market data summary for AAPL
+2025-05-31 09:02:26,043 - llm.client - INFO - Generating strategy (attempt 1/3)
+2025-05-31 09:02:37,020 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-05-31 09:02:37,024 - llm.client - INFO - Successfully generated strategy
+2025-05-31 09:02:37,024 - llm.parser - INFO - Successfully parsed strategy from LLM response
+2025-05-31 09:02:37,024 - strategy.strategy - INFO - Initialized strategy: AAPL Precision Entry Strategy
+2025-05-31 09:02:37,024 - core.orchestrator - INFO - Backtesting strategy: AAPL Precision Entry Strategy
+2025-05-31 09:02:37,024 - strategy.strategy - INFO - Generating signals for 453 data points
+2025-05-31 09:02:37,036 - strategy.strategy - INFO - Generated 0 buy signals and 0 sell signals
+2025-05-31 09:02:37,073 - backtesting.evaluator - INFO - Performance evaluation complete. Score: 22.2
+2025-05-31 09:07:53,014 - llm.client - INFO - Initialized LLM client with model: gpt-4-turbo-preview
+2025-05-31 09:07:53,015 - core.orchestrator - INFO - AI Backtest Orchestrator initialized
+2025-05-31 09:07:53,015 - core.orchestrator - INFO - Starting backtesting session for AAPL
+2025-05-31 09:07:53,015 - core.orchestrator - INFO - Initializing session for AAPL
+2025-05-31 09:07:53,559 - data.stock_data - INFO - Fetching data for AAPL (2y)
+2025-05-31 09:07:53,764 - data.stock_data - INFO - Retrieved 502 days of data for AAPL
+2025-05-31 09:07:53,765 - data.stock_data - INFO - Calculating technical indicators...
+2025-05-31 09:07:53,771 - data.stock_data - INFO - Added technical indicators. Final dataset has 453 rows
+2025-05-31 09:07:53,831 - core.orchestrator - INFO - Session initialized. Retrieved 453 days of data
+2025-05-31 09:07:53,832 - core.orchestrator - INFO - === ITERATION 1 ===
+2025-05-31 09:07:53,832 - core.orchestrator - INFO - Generating initial strategy
+2025-05-31 09:07:53,835 - llm.prompts - INFO - Created market data summary for AAPL
+2025-05-31 09:07:53,835 - llm.client - INFO - Generating strategy (attempt 1/3)
+2025-05-31 09:08:21,717 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-05-31 09:08:21,726 - llm.client - INFO - Successfully generated strategy
+2025-05-31 09:08:21,726 - llm.parser - INFO - Successfully parsed strategy from LLM response
+2025-05-31 09:08:21,726 - strategy.strategy - INFO - Initialized strategy: AAPL Precision Entry Strategy
+2025-05-31 09:08:21,726 - core.orchestrator - INFO - Backtesting strategy: AAPL Precision Entry Strategy
+2025-05-31 09:08:21,726 - strategy.strategy - INFO - Generating signals for 453 data points
+2025-05-31 09:08:21,735 - strategy.strategy - INFO - Generated 0 buy signals and 0 sell signals
+2025-05-31 09:08:21,770 - backtesting.evaluator - INFO - Performance evaluation complete. Score: 22.2
