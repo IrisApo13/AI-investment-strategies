@@ -166,16 +166,24 @@ ORIGINAL STRATEGY:
 WEAKNESSES:
 {json.dumps(weaknesses, indent=2)}
 
-Generate specific improvements. Respond in JSON format:
+Generate specific improvements. Focus on creating executable conditions using available indicators:
+RSI, SMA_20, SMA_50, EMA_12, EMA_26, MACD, MACD_signal, BB_upper, BB_middle, BB_lower, volume_sma, ATR, Close, Open, High, Low, Volume
+
+Respond in JSON format:
 {{
     "improvements": [
         {{
             "category": "Buy Conditions/Sell Conditions/Risk Management",
-            "suggested_change": "Specific improvement to make",
+            "suggested_change": "Use clean, executable conditions like 'RSI < 25' or 'Close > SMA_20 * 1.02'",
             "rationale": "Why this will help"
         }}
     ]
 }}
+
+IMPORTANT: Suggest conditions that are:
+- Clean Python expressions (e.g., "RSI < 30", "Close > SMA_50")
+- Use only available indicators
+- No explanatory text in the conditions themselves
 """
     
     def _parse_weakness_response(self, response: str) -> Dict:

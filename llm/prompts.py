@@ -58,11 +58,14 @@ TASK: Generate a quantitative investment strategy for {ticker}. The strategy sho
 3. Implement proper risk management
 4. Be suitable for the stock's characteristics
 
-CRITICAL REQUIREMENTS:
-- ALL conditions must be executable using available technical indicators
+CRITICAL CONDITION FORMATTING REQUIREMENTS:
+- ALL conditions must be valid Python expressions that can be evaluated directly
+- Use ONLY these available indicators: RSI, SMA_20, SMA_50, EMA_12, EMA_26, MACD, MACD_signal, BB_upper, BB_middle, BB_lower, volume_sma, ATR, Close, Open, High, Low, Volume
 - Use specific numerical thresholds (e.g., "RSI < 30", "Close > SMA_20 * 1.02")
-- Avoid vague terms like "increasing", "trending up", "high volatility"
-- Each condition should be a simple comparison that can be evaluated
+- Avoid explanatory text or parenthetical comments in conditions
+- Each condition must be a simple comparison: indicator operator number
+- DO NOT include phrases like "to identify", "indicating", "for better", "as this", "when", etc.
+- Keep conditions clean and executable: "RSI < 30" NOT "RSI < 30 to identify oversold conditions"
 
 RESPONSE FORMAT (JSON):
 {{
@@ -82,18 +85,23 @@ RESPONSE FORMAT (JSON):
     "risk_management": "Stop loss and position management rules"
 }}
 
-Examples of GOOD conditions:
-- "RSI < 30" (oversold)
-- "Close > SMA_50" (above moving average)
-- "MACD > MACD_signal" (MACD crossover)
-- "BB_lower < Close < BB_middle" (Bollinger band position)
-- "volume_ratio > 1.5" (high volume)
+Examples of GOOD conditions (clean and executable):
+- "RSI < 30"
+- "Close > SMA_50"
+- "MACD > MACD_signal"
+- "Close > BB_upper"
+- "Volume > volume_sma * 1.5"
+- "Close < SMA_20 * 0.98"
+- "RSI > 70"
+- "ATR > 2.0"
 
 Examples of BAD conditions (DO NOT USE):
-- "ATR is increasing" (not executable)
-- "Stock is trending up" (vague)
-- "High volatility period" (undefined)
-- "Momentum is building" (unclear)
+- "RSI < 30 to identify oversold conditions" (contains explanation)
+- "Close > SMA_50 for trend confirmation" (contains explanation)
+- "MACD > MACD_signal indicating bullish momentum" (contains explanation)
+- "Volume > volume_sma * 1.5 as this suggests interest" (contains explanation)
+- "Short-term RSI (5)" (indicator not available)
+- "Price above 50-day SMA (trend confirmation)" (contains explanation)
 
 Generate a strategy now:
 """

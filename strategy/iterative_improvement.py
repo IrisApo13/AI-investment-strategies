@@ -179,27 +179,37 @@ Generate a new, improved strategy that addresses the specific issues mentioned i
 3. Implement the suggested improvements
 4. Use different technical indicators or thresholds where needed
 
+CRITICAL CONDITION FORMATTING REQUIREMENTS:
+- ALL conditions must be valid Python expressions that can be evaluated directly
+- Use ONLY these available indicators: RSI, SMA_20, SMA_50, EMA_12, EMA_26, MACD, MACD_signal, BB_upper, BB_middle, BB_lower, volume_sma, ATR, Close, Open, High, Low, Volume
+- Keep conditions clean and executable: "RSI < 30" NOT "RSI < 30 to identify oversold conditions"
+- DO NOT include explanatory text, parenthetical comments, or phrases like "to identify", "indicating", "for better", etc.
+- Each condition must be a simple comparison: indicator operator number
+
 Respond with a JSON object in this exact format:
 {{
     "name": "Improved [Original Name] v2.0",
     "description": "Brief description of key improvements made",
     "buy_conditions": [
-        "List of improved buy conditions using technical indicators"
+        "RSI < 25",
+        "Close > SMA_20",
+        "Volume > volume_sma * 1.2"
     ],
     "sell_conditions": [
-        "List of improved sell conditions using technical indicators"
+        "RSI > 75",
+        "Close < SMA_20 * 0.98"
     ],
     "position_sizing": "Position sizing strategy (e.g., '15% of portfolio')",
     "risk_management": "Risk management approach (e.g., '3% stop loss')"
 }}
 
-Focus on creating conditions that are:
-- More selective to reduce false signals
-- Better timed for market entry/exit
-- More robust across different market conditions
-- Include proper risk management
+GOOD condition examples:
+- "RSI < 30", "Close > SMA_50", "MACD > MACD_signal", "Volume > volume_sma * 1.5"
 
-Use technical indicators like: RSI, MACD, SMA, EMA, Bollinger Bands, Volume, ATR, etc.
+BAD condition examples (DO NOT USE):
+- "RSI < 30 to identify oversold conditions"
+- "Close > SMA_50 for trend confirmation"
+- "Short-term RSI (5)" (indicator not available)
 """
             
             response = self.llm_client.generate_strategy(improvement_prompt)
