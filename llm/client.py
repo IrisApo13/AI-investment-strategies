@@ -26,7 +26,7 @@ class LLMClient:
         
         logger.info(f"Initialized LLM client with model: {self.model}")
     
-    def generate_strategy(self, prompt: str, retry_count: int = 3) -> str:
+    def generate_strategy(self, prompt: str, retry_count: int = 3, operation_type: str = "STRATEGY GENERATION") -> str:
         """
         Generate investment strategy using the LLM.
         
@@ -40,6 +40,10 @@ class LLMClient:
         for attempt in range(retry_count):
             try:
                 logger.info(f"Generating strategy (attempt {attempt + 1}/{retry_count})")
+                
+                # Display prompt if enabled
+                if Config.SHOW_LLM_PROMPTS:
+                    self._display_prompt(operation_type, prompt)
                 
                 response = self.client.chat.completions.create(
                     model=self.model,
@@ -65,6 +69,10 @@ class LLMClient:
                 
                 if not content:
                     raise ValueError("Empty response from LLM")
+                
+                # Display response if enabled
+                if Config.SHOW_LLM_RESPONSES:
+                    self._display_response(operation_type, content)
                 
                 logger.info("Successfully generated strategy")
                 return content
@@ -111,6 +119,10 @@ class LLMClient:
                     current_strategy, performance_feedback, market_data_summary
                 )
                 
+                # Display prompt if enabled
+                if Config.SHOW_LLM_PROMPTS:
+                    self._display_prompt("STRATEGY IMPROVEMENT", improvement_prompt)
+                
                 response = self.client.chat.completions.create(
                     model=self.model,
                     messages=[
@@ -135,6 +147,10 @@ class LLMClient:
                 
                 if not content:
                     raise ValueError("Empty response from LLM")
+                
+                # Display response if enabled
+                if Config.SHOW_LLM_RESPONSES:
+                    self._display_response("STRATEGY IMPROVEMENT", content)
                 
                 logger.info("Successfully improved strategy")
                 return content
@@ -222,4 +238,20 @@ Make conditions very specific and executable using available technical indicator
                 return False
             else:
                 logger.warning(f"Could not validate API key: {str(e)}")
-                return False 
+                return False
+    
+    def _display_prompt(self, operation_type: str, prompt: str):
+        """Display the prompt being sent to the LLM."""
+        print(f"\n{'='*80}")
+        print(f"🤖 LLM PROMPT - {operation_type}")
+        print(f"{'='*80}")
+        print(prompt)
+        print(f"{'='*80}\n")
+    
+    def _display_response(self, operation_type: str, response: str):
+        """Display the response received from the LLM."""
+        print(f"\n{'='*80}")
+        print(f"🧠 LLM RESPONSE - {operation_type}")
+        print(f"{'='*80}")
+        print(response)
+        print(f"{'='*80}\n") 

@@ -46,6 +46,10 @@ class Config:
     LOG_LEVEL = "INFO"
     LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     
+    # LLM Debug Configuration
+    SHOW_LLM_PROMPTS = True  # Show prompts sent to LLM
+    SHOW_LLM_RESPONSES = True  # Show responses from LLM
+    
     @classmethod
     def validate_config(cls) -> bool:
         """Validate configuration settings."""

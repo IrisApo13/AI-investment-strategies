@@ -212,7 +212,7 @@ BAD condition examples (DO NOT USE):
 - "Short-term RSI (5)" (indicator not available)
 """
             
-            response = self.llm_client.generate_strategy(improvement_prompt)
+            response = self.llm_client.generate_strategy(improvement_prompt, operation_type="ITERATIVE STRATEGY IMPROVEMENT")
             
             # Parse improved strategy
             improved_strategy = self._parse_strategy_response(response)

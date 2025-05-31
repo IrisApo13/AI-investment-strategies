@@ -184,7 +184,7 @@ class AIBacktestOrchestrator:
             )
             
             # Generate strategy using LLM
-            llm_response = self.llm_client.generate_strategy(prompt)
+            llm_response = self.llm_client.generate_strategy(prompt, operation_type="INITIAL STRATEGY GENERATION")
             
             # Parse the response
             strategy_dict = self.strategy_parser.parse_strategy_response(llm_response)

@@ -104,7 +104,7 @@ class PerformanceAnalyzer:
         """Use LLM to identify strategy weaknesses based on performance data."""
         try:
             analysis_prompt = self._create_weakness_analysis_prompt(metrics, strategy_dict, trades_df)
-            response = self.llm_client.generate_strategy(analysis_prompt)
+            response = self.llm_client.generate_strategy(analysis_prompt, operation_type="WEAKNESS ANALYSIS")
             weaknesses = self._parse_weakness_response(response)
             return weaknesses
             
@@ -116,7 +116,7 @@ class PerformanceAnalyzer:
         """Generate specific improvement suggestions based on identified weaknesses."""
         try:
             improvement_prompt = self._create_improvement_prompt(metrics, weaknesses, strategy_dict)
-            response = self.llm_client.generate_strategy(improvement_prompt)
+            response = self.llm_client.generate_strategy(improvement_prompt, operation_type="IMPROVEMENT SUGGESTIONS")
             improvements = self._parse_improvement_response(response)
             return improvements
             

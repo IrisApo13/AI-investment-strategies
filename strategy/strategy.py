@@ -123,13 +123,25 @@ class InvestmentStrategy:
             if not conditions:
                 return False
             
-            # If there's only one condition, evaluate it directly
-            if len(conditions) == 1:
-                return self._evaluate_single_condition(row, conditions[0], entry_price)
+            # Clean and filter valid conditions
+            valid_conditions = []
+            for condition in conditions:
+                cleaned = self._clean_condition(condition.strip())
+                if cleaned:  # Only keep non-empty cleaned conditions
+                    valid_conditions.append(cleaned)
+            
+            # If no valid conditions remain after cleaning, return False
+            if not valid_conditions:
+                logger.debug(f"No valid conditions found after cleaning from: {conditions}")
+                return False
+            
+            # If there's only one valid condition, evaluate it directly
+            if len(valid_conditions) == 1:
+                return self._evaluate_single_condition(row, valid_conditions[0], entry_price)
             
             # For multiple conditions, use OR logic (any condition can trigger)
             # This makes strategies more likely to generate signals
-            for condition in conditions:
+            for condition in valid_conditions:
                 if self._evaluate_single_condition(row, condition, entry_price):
                     return True
             
@@ -152,10 +164,15 @@ class InvestmentStrategy:
             True if condition is met
         """
         try:
-            condition = condition.strip()
+            original_condition = condition.strip()
             
             # Clean up the condition - extract just the executable part
-            condition = self._clean_condition(condition)
+            condition = self._clean_condition(original_condition)
+            
+            # If cleaning resulted in empty condition, skip it
+            if not condition:
+                logger.debug(f"Skipping empty/invalid condition: '{original_condition}'")
+                return False
             
             # Handle OR conditions
             if ' OR ' in condition.upper():
@@ -175,13 +192,33 @@ class InvestmentStrategy:
             return self._parse_comparison_condition(row, condition)
             
         except Exception as e:
-            logger.warning(f"Error evaluating condition '{condition}': {str(e)}")
+            logger.warning(f"Error evaluating condition '{original_condition}': {str(e)}")
             return False
     
     def _clean_condition(self, condition: str) -> str:
         """Clean up condition string to extract just the executable part."""
         try:
-            # Remove common explanation phrases
+            original_condition = condition.strip()
+            
+            # Skip empty conditions
+            if not original_condition:
+                return ""
+            
+            # Handle common problematic patterns seen in warnings
+            # If it starts with just a number or ends with just a comma, it's likely garbage
+            if re.match(r'^\d+[\.,]?\s*$', original_condition):
+                logger.debug(f"Skipping numeric fragment: '{original_condition}'")
+                return ""
+            
+            # If it's just text with no operators, it's likely explanatory text
+            if not any(op in original_condition for op in ['<', '>', '=', '!=']):
+                logger.debug(f"Skipping non-comparison text: '{original_condition}'")
+                return ""
+            
+            # Remove trailing commas and extra whitespace
+            condition = re.sub(r',\s*$', '', original_condition)
+            
+            # More aggressive cleanup patterns
             cleanup_patterns = [
                 r'\s+(to\s+.*)$',  # Remove "to identify oversold conditions..."
                 r'\s+(for\s+.*)$',  # Remove "for better entry points..."
@@ -189,39 +226,49 @@ class InvestmentStrategy:
                 r'\s+(as\s+.*)$',  # Remove "as this suggests..."
                 r'\s+(which\s+.*)$',  # Remove "which means..."
                 r'\s+(when\s+.*)$',  # Remove explanatory "when" clauses
+                r'\s+(confirming\s+.*)$',  # Remove "confirming stronger uptrend..."
+                r'\s+(adjusted\s*)$',  # Remove "adjusted" at end
                 r'\s*\([^)]*\)$',  # Remove parenthetical explanations at end
+                r'\s*,\s*[a-z][^<>=]*$',  # Remove trailing explanations after comma
             ]
             
-            original_condition = condition
             for pattern in cleanup_patterns:
-                condition = re.sub(pattern, '', condition, flags=re.IGNORECASE)
+                condition = re.sub(pattern, '', condition, flags=re.IGNORECASE).strip()
             
-            # Extract just the first comparison if there are multiple explanations
-            # Look for patterns like "RSI < 30" or "Close > SMA_20 * 1.02"
-            comparison_patterns = [
-                r'^([A-Za-z_][A-Za-z0-9_]*\s*[<>=]+\s*[A-Za-z0-9_.*\s]+?)(?:\s+[a-z]+|$)',
-                r'^([A-Za-z_][A-Za-z0-9_]*\s*[<>=!]+\s*[\d.]+)(?:\s+[a-z]+|$)',
+            # Extract valid comparison patterns more strictly
+            # Look for: INDICATOR OPERATOR VALUE or INDICATOR OPERATOR INDICATOR * VALUE
+            valid_patterns = [
+                # Pattern: RSI < 30, Close > SMA_20, Volume > volume_sma * 1.5
+                r'^([A-Za-z_][A-Za-z0-9_]*)\s*([<>=!]+)\s*([A-Za-z_][A-Za-z0-9_]*(?:\s*\*\s*[\d.]+)?|[\d.]+)$',
+                # Pattern: Close > SMA_20 * 1.02
+                r'^([A-Za-z_][A-Za-z0-9_]*)\s*([<>=!]+)\s*([A-Za-z_][A-Za-z0-9_]*\s*\*\s*[\d.]+)$'
             ]
             
-            for pattern in comparison_patterns:
-                match = re.match(pattern, condition, re.IGNORECASE)
+            for pattern in valid_patterns:
+                match = re.match(pattern, condition)
                 if match:
-                    condition = match.group(1).strip()
-                    break
+                    clean_condition = f"{match.group(1).strip()} {match.group(2)} {match.group(3).strip()}"
+                    if clean_condition != original_condition:
+                        logger.debug(f"Extracted valid condition: '{original_condition}' -> '{clean_condition}'")
+                    return clean_condition
             
-            # If we cleaned too much and lost the condition, use original
-            if not any(op in condition for op in ['<', '>', '=']):
-                logger.warning(f"Over-cleaned condition '{original_condition}' -> '{condition}', using original")
-                condition = original_condition
+            # If no valid pattern found but we have operators, try to salvage
+            if any(op in condition for op in ['<', '>', '=']):
+                # Remove any remaining explanatory text after the comparison
+                condition = re.sub(r'([<>=!]+\s*[\d.]+).*$', r'\1', condition)
+                condition = re.sub(r'([<>=!]+\s*[A-Za-z_][A-Za-z0-9_]*(?:\s*\*\s*[\d.]+)?).*$', r'\1', condition)
+                
+                if condition != original_condition:
+                    logger.debug(f"Salvaged condition: '{original_condition}' -> '{condition}'")
+                return condition.strip()
             
-            if condition != original_condition:
-                logger.debug(f"Cleaned condition: '{original_condition}' -> '{condition}'")
-            
-            return condition.strip()
+            # If we get here, the condition is likely not parseable
+            logger.debug(f"Could not clean condition, skipping: '{original_condition}'")
+            return ""
             
         except Exception as e:
-            logger.warning(f"Error cleaning condition '{condition}': {str(e)}")
-            return condition
+            logger.warning(f"Error cleaning condition '{original_condition}': {str(e)}")
+            return ""
     
     def _evaluate_profit_loss_condition(self, row: pd.Series, condition: str, entry_price: float) -> bool:
         """Evaluate profit/loss conditions."""
@@ -300,6 +347,24 @@ class InvestmentStrategy:
         try:
             expr = expr.strip()
             
+            # Skip empty expressions
+            if not expr:
+                return None
+            
+            # Skip problematic patterns that shouldn't be evaluated
+            problematic_patterns = [
+                r'^\d+\s*,\s*$',  # Just a number with comma
+                r'^[a-z]+\s*,\s*$',  # Just text with comma  
+                r'adjusted$',  # Ends with "adjusted"
+                r'confirming\s+',  # Contains "confirming"
+                r'^[A-Z]+\([^)]*\)$',  # Function calls like RSI(14)
+            ]
+            
+            for pattern in problematic_patterns:
+                if re.search(pattern, expr, re.IGNORECASE):
+                    logger.debug(f"Skipping problematic expression: {expr}")
+                    return None
+            
             # If it's a number, return it
             try:
                 return float(expr)
@@ -340,11 +405,14 @@ class InvestmentStrategy:
                 value = row[aliases[expr]]
                 return float(value) if pd.notna(value) else None
             
-            logger.warning(f"Could not evaluate expression: {expr}")
+            # Only warn if it looks like it should be a valid expression
+            if any(c.isalnum() or c == '_' for c in expr):
+                logger.debug(f"Could not evaluate expression: {expr}")
+            
             return None
             
         except Exception as e:
-            logger.warning(f"Error evaluating expression '{expr}': {str(e)}")
+            logger.debug(f"Error evaluating expression '{expr}': {str(e)}")
             return None
     
     def _parse_position_size(self, sizing_text: str) -> float:
