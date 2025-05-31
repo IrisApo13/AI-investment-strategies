@@ -9,7 +9,9 @@ from unittest.mock import Mock, patch
 from datetime import datetime, timedelta
 
 # Set test environment
-os.environ['OPENAI_API_KEY'] = 'test-key-for-testing'
+# Load environment variables (OpenAI API key will be loaded from .env)
+from dotenv import load_dotenv
+load_dotenv()
 
 from config.settings import Config
 from data.stock_data import StockDataProvider

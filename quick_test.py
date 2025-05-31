@@ -3,7 +3,9 @@
 Quick test to demonstrate the working AI backtesting system.
 """
 import os
-os.environ['OPENAI_API_KEY'] = 'test-key-for-testing'
+# Load environment variables (OpenAI API key will be loaded from .env)
+from dotenv import load_dotenv
+load_dotenv()
 
 from data.stock_data import StockDataProvider
 from strategy.strategy import InvestmentStrategy

@@ -17,7 +17,9 @@ else:
     print(f"✅ OPENAI_API_KEY is set (length: {len(OPENAI_API_KEY)})")
     USE_AI = True
 
-os.environ['OPENAI_API_KEY'] = OPENAI_API_KEY or 'test-key-for-testing'
+# Load environment variables (OpenAI API key will be loaded from .env)
+from dotenv import load_dotenv
+load_dotenv()
 
 from data.stock_data import StockDataProvider
 from strategy.strategy import InvestmentStrategy
