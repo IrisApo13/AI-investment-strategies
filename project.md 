@@ -1,0 +1,12 @@
+I want to build an AI system that help me do backtesting of investment strategies. 
+An investment stategy tells me when is a good time to buy or sell a stock
+
+I want to build this in python and using the OpenAI API for LLM. 
+
+The program will accept a stock ticker, it will ask the LLM for an investment strategy considering
+stock prices from the last 10 years. Then I will need to run a backtest on this strategy and 
+determine if this strategy worked well or not. 
+
+if this strategy did not work, I will ask the LLM to explain why and then I will 
+give this feedback back to the LLM to ask for a better strategy in a loop. 
+In each iteration of the loop I will ask the user if he wants to continue or stop. 
