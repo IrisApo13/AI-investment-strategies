@@ -26,6 +26,39 @@ class LLMClient:
         
         logger.info(f"Initialized LLM client with model: {self.model}")
     
+    def _get_model_specific_params(self) -> Dict:
+        """
+        Get model-specific parameters for OpenAI API calls.
+        Some models like o1-mini, o4-mini have different parameter requirements:
+        - Use 'max_completion_tokens' instead of 'max_tokens'
+        - Only support default temperature (1.0)
+        - Don't support some parameters like top_p, frequency_penalty, presence_penalty
+        """
+        base_params = {
+            "model": self.model,
+        }
+        
+        # Models that use max_completion_tokens instead of max_tokens
+        new_models = ['o1-mini', 'o1-preview', 'o4-mini', 'gpt-o1-mini', 'gpt-o4-mini']
+        
+        # Check if the current model is one of the new models
+        if any(model_name in self.model.lower() for model_name in new_models):
+            base_params["max_completion_tokens"] = self.max_tokens
+            # New models only support default temperature (1.0)
+            # Don't include temperature parameter to use default
+            logger.info(f"Using max_completion_tokens and default temperature for model: {self.model}")
+        else:
+            base_params["max_tokens"] = self.max_tokens
+            base_params["temperature"] = self.temperature
+            base_params.update({
+                "top_p": 1,
+                "frequency_penalty": 0,
+                "presence_penalty": 0
+            })
+            logger.info(f"Using max_tokens and custom temperature for model: {self.model}")
+        
+        return base_params
+    
     def generate_strategy(self, prompt: str, retry_count: int = 3, operation_type: str = "STRATEGY GENERATION") -> str:
         """
         Generate investment strategy using the LLM.
@@ -45,25 +78,21 @@ class LLMClient:
                 if Config.SHOW_LLM_PROMPTS:
                     self._display_prompt(operation_type, prompt)
                 
-                response = self.client.chat.completions.create(
-                    model=self.model,
-                    messages=[
-                        {
-                            "role": "system",
-                            "content": "You are an expert quantitative analyst and investment strategist. "
-                                     "Generate precise, executable investment strategies based on technical indicators."
-                        },
-                        {
-                            "role": "user", 
-                            "content": prompt
-                        }
-                    ],
-                    max_tokens=self.max_tokens,
-                    temperature=self.temperature,
-                    top_p=1,
-                    frequency_penalty=0,
-                    presence_penalty=0
-                )
+                # Get model-specific parameters
+                api_params = self._get_model_specific_params()
+                api_params["messages"] = [
+                    {
+                        "role": "system",
+                        "content": "You are an expert quantitative analyst and investment strategist. "
+                                 "Generate precise, executable investment strategies based on technical indicators."
+                    },
+                    {
+                        "role": "user", 
+                        "content": prompt
+                    }
+                ]
+                
+                response = self.client.chat.completions.create(**api_params)
                 
                 content = response.choices[0].message.content.strip()
                 
@@ -123,25 +152,21 @@ class LLMClient:
                 if Config.SHOW_LLM_PROMPTS:
                     self._display_prompt("STRATEGY IMPROVEMENT", improvement_prompt)
                 
-                response = self.client.chat.completions.create(
-                    model=self.model,
-                    messages=[
-                        {
-                            "role": "system",
-                            "content": "You are an expert quantitative analyst specializing in strategy optimization. "
-                                     "Analyze performance feedback and improve investment strategies to achieve better results."
-                        },
-                        {
-                            "role": "user",
-                            "content": improvement_prompt
-                        }
-                    ],
-                    max_tokens=self.max_tokens,
-                    temperature=self.temperature,
-                    top_p=1,
-                    frequency_penalty=0,
-                    presence_penalty=0
-                )
+                # Get model-specific parameters
+                api_params = self._get_model_specific_params()
+                api_params["messages"] = [
+                    {
+                        "role": "system",
+                        "content": "You are an expert quantitative analyst specializing in strategy optimization. "
+                                 "Analyze performance feedback and improve investment strategies to achieve better results."
+                    },
+                    {
+                        "role": "user",
+                        "content": improvement_prompt
+                    }
+                ]
+                
+                response = self.client.chat.completions.create(**api_params)
                 
                 content = response.choices[0].message.content.strip()
                 
@@ -253,7 +278,7 @@ Make conditions very specific and executable using available technical indicator
     def validate_api_key(self) -> bool:
         """Validate the OpenAI API key."""
         try:
-            # Make a simple test request
+            # Make a simple test request with a basic model that supports max_tokens
             response = self.client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[{"role": "user", "content": "Hello"}],

@@ -9,8 +9,15 @@ class Config:
     
     # OpenAI API Configuration
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-    OPENAI_MODEL = "gpt-4-turbo-preview"
-    MAX_TOKENS = 2000
+    
+    # OpenAI Model Configuration
+    # Supported models:
+    # - GPT-4/GPT-3.5 series: "gpt-4-turbo-preview", "gpt-4", "gpt-3.5-turbo" (use max_tokens)
+    # - O1 series: "o1-mini", "o1-preview" (use max_completion_tokens)
+    # - O4 series: "o4-mini" (use max_completion_tokens)
+    OPENAI_MODEL = "gpt-4-turbo"
+    
+    MAX_TOKENS = 2000  # Will be mapped to max_tokens or max_completion_tokens based on model
     TEMPERATURE = 0.7
     
     # Backtesting Configuration
