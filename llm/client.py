@@ -200,21 +200,50 @@ TASK: Analyze the performance and improve the strategy. Focus on:
 3. Better risk management
 4. Optimizing entry and exit criteria
 
-Provide an improved strategy with the same JSON format:
+CRITICAL CONDITION FORMATTING REQUIREMENTS:
+- ALL conditions must be valid Python expressions that can be evaluated directly
+- Use ONLY these available indicators: RSI, SMA_20, SMA_50, EMA_12, EMA_26, MACD, MACD_signal, BB_upper, BB_middle, BB_lower, volume_sma, ATR, Close, Open, High, Low, Volume
+- Use specific numerical thresholds (e.g., "RSI < 30", "Close > SMA_20 * 1.02")
+- Avoid explanatory text or parenthetical comments in conditions
+- Each condition must be a simple comparison: indicator operator number
+- DO NOT include phrases like "to identify", "indicating", "for better", "as this", "when", etc.
+- Keep conditions clean and executable: "RSI < 30" NOT "RSI < 30 to identify oversold conditions"
+
+RESPONSE FORMAT (JSON):
 {{
-    "name": "Improved Strategy Name",
-    "description": "Clear description of the improved approach",
+    "name": "Strategy Name",
+    "description": "Brief strategy description and rationale",
     "buy_conditions": [
-        "Specific, executable condition 1",
-        "Specific, executable condition 2"
+        "RSI < 30",
+        "Close > SMA_20",
+        "Volume > volume_sma * 1.5"
     ],
     "sell_conditions": [
-        "Specific, executable condition 1", 
-        "Specific, executable condition 2"
+        "RSI > 70",
+        "Close < SMA_20 * 0.98",
+        "profit > 0.1 OR loss > 0.05"
     ],
-    "position_sizing": "Risk management approach",
-    "risk_management": "Stop loss and risk controls"
+    "position_sizing": "Fixed percentage of portfolio (specify %)",
+    "risk_management": "Stop loss and position management rules"
 }}
+
+Examples of GOOD conditions (clean and executable):
+- "RSI < 30"
+- "Close > SMA_50"
+- "MACD > MACD_signal"
+- "Close > BB_upper"
+- "Volume > volume_sma * 1.5"
+- "Close < SMA_20 * 0.98"
+- "RSI > 70"
+- "ATR > 2.0"
+
+Examples of BAD conditions (DO NOT USE):
+- "RSI < 30 to identify oversold conditions" (contains explanation)
+- "Close > SMA_50 for trend confirmation" (contains explanation)
+- "MACD > MACD_signal indicating bullish momentum" (contains explanation)
+- "Volume > volume_sma * 1.5 as this suggests interest" (contains explanation)
+- "Short-term RSI (5)" (indicator not available)
+- "Price above 50-day SMA (trend confirmation)" (contains explanation)
 
 Make conditions very specific and executable using available technical indicators.
 """
