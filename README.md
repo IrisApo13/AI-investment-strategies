@@ -1,3 +1,9 @@
+# This is AI 
+
+These are some experiments with AI generated code. 
+
+
+
 # AI Investment Strategy Backtesting System
 
 An intelligent backtesting system that uses OpenAI's GPT-4 to generate, test, and iteratively improve investment strategies based on technical analysis.
