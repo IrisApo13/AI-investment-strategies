@@ -6,6 +6,9 @@ import numpy as np
 import logging
 from typing import Dict, List, Tuple, Optional
 import re
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+from datetime import datetime
 
 from config.settings import Config
 
@@ -465,4 +468,191 @@ Sell Conditions:
 
 Position Sizing: {self.position_sizing}
 Risk Management: {self.risk_management}
-""".strip() 
+""".strip()
+    
+    def plot_strategy(self, data: pd.DataFrame, signals: pd.DataFrame = None, 
+                     start_date: str = None, end_date: str = None,
+                     figsize: Tuple[int, int] = (15, 10)) -> None:
+        """
+        Plot stock price, technical indicators used in strategy conditions, and buy/sell signals.
+        
+        Args:
+            data: DataFrame with OHLCV and technical indicators
+            signals: DataFrame with buy/sell signals (if None, will generate them)
+            start_date: Start date for plotting (YYYY-MM-DD format)
+            end_date: End date for plotting (YYYY-MM-DD format)
+            figsize: Figure size as (width, height)
+        """
+        try:
+            # Filter data by date range if specified
+            plot_data = data.copy()
+            if start_date:
+                plot_data = plot_data[plot_data.index >= start_date]
+            if end_date:
+                plot_data = plot_data[plot_data.index <= end_date]
+            
+            if plot_data.empty:
+                logger.warning("No data available for the specified date range")
+                return
+            
+            # Generate signals if not provided
+            if signals is None:
+                signals = self.generate_signals(plot_data)
+            else:
+                # Filter signals to match data range
+                signals = signals.loc[plot_data.index]
+            
+            # Extract indicators used in conditions
+            indicators_used = self._extract_indicators_from_conditions()
+            
+            # Remove indicators that don't exist in the data
+            available_indicators = [ind for ind in indicators_used if ind in plot_data.columns]
+            
+            if not available_indicators:
+                logger.warning("No technical indicators found in data that match strategy conditions")
+                # Just plot price and signals
+                available_indicators = []
+            
+            # Determine number of subplots needed
+            num_subplots = 2 + len(available_indicators)  # Price + Volume + Indicators
+            
+            # Create subplots
+            fig, axes = plt.subplots(num_subplots, 1, figsize=figsize, 
+                                   gridspec_kw={'height_ratios': [3] + [1] * (num_subplots - 1)})
+            
+            if num_subplots == 1:
+                axes = [axes]
+            
+            # Plot 1: Stock Price with Buy/Sell Signals
+            ax_price = axes[0]
+            ax_price.plot(plot_data.index, plot_data['Close'], label='Close Price', linewidth=1.5, color='black')
+            
+            # Add buy/sell signals
+            buy_signals = signals[signals['buy_signal']]
+            sell_signals = signals[signals['sell_signal']]
+            
+            if not buy_signals.empty:
+                buy_prices = plot_data.loc[buy_signals.index, 'Close']
+                ax_price.scatter(buy_signals.index, buy_prices, 
+                               color='green', marker='^', s=100, label='Buy Signal', zorder=5)
+            
+            if not sell_signals.empty:
+                sell_prices = plot_data.loc[sell_signals.index, 'Close']
+                ax_price.scatter(sell_signals.index, sell_prices, 
+                                color='red', marker='v', s=100, label='Sell Signal', zorder=5)
+            
+            ax_price.set_title(f'{self.name} - Stock Price and Signals', fontsize=14, fontweight='bold')
+            ax_price.set_ylabel('Price ($)', fontsize=12)
+            ax_price.legend(loc='upper left')
+            ax_price.grid(True, alpha=0.3)
+            
+            # Plot 2: Volume
+            ax_volume = axes[1]
+            ax_volume.bar(plot_data.index, plot_data['Volume'], alpha=0.6, color='lightblue')
+            ax_volume.set_ylabel('Volume', fontsize=12)
+            ax_volume.set_title('Volume', fontsize=12)
+            ax_volume.grid(True, alpha=0.3)
+            
+            # Plot indicators
+            for i, indicator in enumerate(available_indicators):
+                ax_ind = axes[2 + i]
+                ax_ind.plot(plot_data.index, plot_data[indicator], 
+                           label=indicator, linewidth=1.5, color=f'C{i}')
+                
+                # Add horizontal lines for common thresholds
+                self._add_indicator_thresholds(ax_ind, indicator)
+                
+                ax_ind.set_ylabel(indicator, fontsize=12)
+                ax_ind.set_title(f'{indicator}', fontsize=12)
+                ax_ind.legend(loc='upper left')
+                ax_ind.grid(True, alpha=0.3)
+            
+            # Format x-axis for all subplots
+            for ax in axes:
+                ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
+                ax.xaxis.set_major_locator(mdates.MonthLocator(interval=2))
+                plt.setp(ax.xaxis.get_majorticklabels(), rotation=45)
+            
+            # Set x-label only on bottom subplot
+            axes[-1].set_xlabel('Date', fontsize=12)
+            
+            # Adjust layout
+            plt.tight_layout()
+            
+            # Show strategy information
+            strategy_info = f"""
+Strategy: {self.name}
+Buy Conditions: {', '.join(self.buy_conditions[:3])}{'...' if len(self.buy_conditions) > 3 else ''}
+Sell Conditions: {', '.join(self.sell_conditions[:3])}{'...' if len(self.sell_conditions) > 3 else ''}
+Total Buy Signals: {len(buy_signals)}
+Total Sell Signals: {len(sell_signals)}
+            """.strip()
+            
+            fig.suptitle(strategy_info, fontsize=10, y=0.02, ha='left', va='bottom')
+            
+            plt.show()
+            
+            logger.info(f"Plotted strategy visualization with {len(available_indicators)} indicators")
+            
+        except Exception as e:
+            logger.error(f"Error plotting strategy: {str(e)}")
+            raise
+    
+    def _extract_indicators_from_conditions(self) -> List[str]:
+        """Extract technical indicator names from buy/sell conditions."""
+        indicators = set()
+        
+        all_conditions = self.buy_conditions + self.sell_conditions
+        
+        for condition in all_conditions:
+            # Clean the condition first
+            cleaned_condition = self._clean_condition(condition)
+            if not cleaned_condition:
+                continue
+            
+            # Extract indicator names (usually uppercase or with underscores)
+            # Look for patterns like RSI, SMA_20, MACD, etc.
+            indicator_patterns = [
+                r'\b([A-Z][A-Z_0-9]*)\b',  # RSI, SMA_20, MACD_SIGNAL
+                r'\b(sma_\d+)\b',          # sma_20
+                r'\b(ema_\d+)\b',          # ema_20
+                r'\b(rsi)\b',              # rsi (lowercase)
+                r'\b(macd)\b',             # macd (lowercase)
+                r'\b(volume_sma)\b',       # volume_sma
+                r'\b(bb_upper|bb_lower|bb_middle)\b',  # Bollinger Bands
+            ]
+            
+            for pattern in indicator_patterns:
+                matches = re.findall(pattern, cleaned_condition, re.IGNORECASE)
+                for match in matches:
+                    # Skip basic OHLCV columns
+                    if match.upper() not in ['OPEN', 'HIGH', 'LOW', 'CLOSE', 'VOLUME']:
+                        indicators.add(match)
+        
+        return list(indicators)
+    
+    def _add_indicator_thresholds(self, ax: plt.Axes, indicator: str) -> None:
+        """Add common threshold lines for technical indicators."""
+        indicator_lower = indicator.lower()
+        
+        # RSI thresholds
+        if 'rsi' in indicator_lower:
+            ax.axhline(y=70, color='red', linestyle='--', alpha=0.7, label='Overbought (70)')
+            ax.axhline(y=30, color='green', linestyle='--', alpha=0.7, label='Oversold (30)')
+            ax.set_ylim(0, 100)
+        
+        # Stochastic thresholds
+        elif 'stoch' in indicator_lower or 'k%' in indicator_lower or 'd%' in indicator_lower:
+            ax.axhline(y=80, color='red', linestyle='--', alpha=0.7, label='Overbought (80)')
+            ax.axhline(y=20, color='green', linestyle='--', alpha=0.7, label='Oversold (20)')
+            ax.set_ylim(0, 100)
+        
+        # MACD zero line
+        elif 'macd' in indicator_lower and 'signal' not in indicator_lower:
+            ax.axhline(y=0, color='black', linestyle='-', alpha=0.5, label='Zero Line')
+        
+        # Williams %R thresholds
+        elif 'williams' in indicator_lower or '%r' in indicator_lower:
+            ax.axhline(y=-20, color='red', linestyle='--', alpha=0.7, label='Overbought (-20)')
+            ax.axhline(y=-80, color='green', linestyle='--', alpha=0.7, label='Oversold (-80)')
+            ax.set_ylim(-100, 0) 

@@ -299,6 +299,7 @@ class AIBacktestOrchestrator:
         try:
             strategy = strategy_result['strategy']
             evaluation = backtest_result['evaluation']
+            signals = backtest_result.get('signals')
             
             print(f"\n{'='*60}")
             print(f"ITERATION {iteration} RESULTS")
@@ -322,6 +323,14 @@ class AIBacktestOrchestrator:
             print(f"\nSell Conditions:")
             for i, condition in enumerate(strategy.sell_conditions, 1):
                 print(f"  {i}. {condition}")
+            
+            # Plot strategy visualization
+            print(f"\nGenerating strategy visualization...")
+            try:
+                strategy.plot_strategy(self.market_data, signals, figsize=(16, 12))
+            except Exception as plot_error:
+                logger.warning(f"Could not generate plot: {str(plot_error)}")
+                print(f"Note: Visualization could not be generated ({str(plot_error)})")
                 
         except Exception as e:
             logger.error(f"Error displaying iteration results: {str(e)}")
