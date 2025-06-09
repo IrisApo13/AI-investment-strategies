@@ -57,6 +57,9 @@ class Config:
     SHOW_LLM_PROMPTS = True  # Show prompts sent to LLM
     SHOW_LLM_RESPONSES = True  # Show responses from LLM
     
+    # Visualization Configuration
+    SHOW_STRATEGY_PLOTS = True  # Show strategy visualization charts during backtesting
+    
     @classmethod
     def validate_config(cls) -> bool:
         """Validate configuration settings."""
