@@ -73,7 +73,10 @@ class AIBacktestOrchestrator:
                 if iteration == 1:
                     strategy_result = self._generate_initial_strategy()
                 else:
-                    strategy_result = self._improve_current_strategy(iteration)
+                    if Config.FEEDBACK_STATEGY == "basic_feedback":
+                        strategy_result = self._improve_current_strategy(iteration)
+                    else:
+                        strategy_result = self._generate_initial_strategy()
                 
                 if not strategy_result['success']:
                     logger.error(f"Strategy generation failed in iteration {iteration}")

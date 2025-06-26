@@ -37,7 +37,15 @@ class Config:
     MIN_SHARPE_RATIO = 0.5
     MIN_WIN_RATE = 45.0  # 45%
     MAX_DRAWDOWN_THRESHOLD = -20.0  # -20%
+
+
+    # feedback strategies configuration
+    # no_feedback: each run generates a new strategy 
+    # basic_feedback: the feedback is the performance of the last strategy 
     
+    FEEDBACK_STATEGY = "no_feedback"
+
+
     # Technical Indicators
     TECHNICAL_INDICATORS = [
         'SMA_20', 'SMA_50', 'EMA_12', 'EMA_26', 'RSI', 'MACD', 'MACD_signal',
