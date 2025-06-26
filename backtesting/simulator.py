@@ -50,11 +50,11 @@ class PortfolioSimulator:
             
             # Process buy signal
             if signal_row['buy_signal']:
-                self._execute_buy(ticker, current_price, signal_row['position_size'], date)
+                self._execute_buy(ticker, current_price, signal_row['position_size'], data, date)
             
             # Process sell signal
             elif signal_row['sell_signal']:
-                self._execute_sell(ticker, current_price, abs(signal_row['position_size']), date)
+                self._execute_sell(ticker, current_price, abs(signal_row['position_size']), data, date)
             
             # Calculate portfolio value
             portfolio_value = self._calculate_portfolio_value(data.loc[date], ticker)
@@ -75,7 +75,7 @@ class PortfolioSimulator:
         
         return performance
     
-    def _execute_buy(self, ticker: str, price: float, position_size: float, date):
+    def _execute_buy(self, ticker: str, price: float, position_size: float, data, date):
         """Execute a buy order."""
         # Calculate trade amount
         trade_amount = self.cash * position_size
@@ -102,12 +102,13 @@ class PortfolioSimulator:
                 'shares': shares_to_buy,
                 'price': execution_price,
                 'amount': trade_amount,
+                "metrics": data.loc[date],
                 'transaction_cost': trade_amount * self.transaction_cost
             })
             
             logger.debug(f"BUY: {shares_to_buy:.2f} shares of {ticker} at ${execution_price:.2f}")
     
-    def _execute_sell(self, ticker: str, price: float, position_size: float, date):
+    def _execute_sell(self, ticker: str, price: float, position_size: float, data, date):
         """Execute a sell order."""
         if ticker not in self.positions or self.positions[ticker] <= 0:
             return
@@ -134,6 +135,7 @@ class PortfolioSimulator:
             'shares': shares_to_sell,
             'price': execution_price,
             'amount': gross_proceeds,
+            "metrics": data.loc[date],
             'transaction_cost': gross_proceeds * self.transaction_cost
         })
         

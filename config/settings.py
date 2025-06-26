@@ -46,7 +46,9 @@ class Config:
     ]
     
     # Iteration Configuration
-    MAX_ITERATIONS = 10
+    INTERACTIVE = False
+
+    MAX_ITERATIONS = 5 
     IMPROVEMENT_THRESHOLD = 5.0  # 5% improvement threshold
     
     # Logging Configuration

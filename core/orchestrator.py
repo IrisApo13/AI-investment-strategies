@@ -351,15 +351,20 @@ class AIBacktestOrchestrator:
             print(f"\nCurrent iteration: {current_iteration}/{max_iterations}")
             print(f"Current performance score: {current_score:.1f}/100")
             
-            while True:
-                response = input("\nContinue to next iteration? (y/n): ").strip().lower()
-                if response in ['y', 'yes']:
-                    return True
-                elif response in ['n', 'no']:
-                    return False
-                else:
-                    print("Please enter 'y' or 'n'")
-                    
+            
+            if Config.INTERACTIVE:
+                while True:
+                    response = input("\nContinue to next iteration? (y/n): ").strip().lower()
+                    if response in ['y', 'yes']:
+                        return True
+                    elif response in ['n', 'no']:
+                        return False
+                    else:
+                        print("Please enter 'y' or 'n'")
+            else:
+                return True
+
+                        
         except Exception as e:
             logger.error(f"Error in user input: {str(e)}")
             return False

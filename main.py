@@ -113,12 +113,20 @@ def run_backtesting_session(ticker: str, max_iterations: int, target_score: floa
             print(results['session_summary'])
             
             # Offer to save results
-            save_option = input("\nSave session results to file? (y/n): ").strip().lower()
-            if save_option in ['y', 'yes']:
+            
+            if Config.INTERACTIVE:
+                save_option = input("\nSave session results to file? (y/n): ").strip().lower()
+                if save_option in ['y', 'yes']:
+                    if orchestrator.save_session_results(results):
+                        print("✓ Results saved successfully!")
+                    else:
+                        print("❌ Failed to save results")
+            else:
                 if orchestrator.save_session_results(results):
                     print("✓ Results saved successfully!")
                 else:
                     print("❌ Failed to save results")
+
         
         else:
             print(f"\n❌ Session failed: {results.get('error', 'Unknown error')}")
