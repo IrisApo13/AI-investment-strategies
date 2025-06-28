@@ -161,8 +161,15 @@ class PortfolioSimulator:
         # Buy and hold comparison
         start_price = data['Close'].iloc[0]
         end_price = data['Close'].iloc[-1]
+        start_date = data.index[0]
+        end_date = data.index[-1]
         buy_hold_return = (end_price / start_price - 1) * 100
-        
+
+        logger.debug(f"END PRICE: {end_price:.2f} START PRICE: {start_price:.2f} BUY_HOLD: {buy_hold_return:.2f}")
+        logger.debug(f"END DATE: {end_date} START DATE: {start_date} BUY_HOLD: {buy_hold_return:.2f}")
+
+
+
         # Risk metrics
         if len(self.daily_returns) > 1:
             annualized_return = self.daily_returns.mean() * 252 * 100

@@ -22,7 +22,7 @@ class Config:
     
     # Backtesting Configuration
     INITIAL_CAPITAL = 100000.0  # $100,000
-    TRANSACTION_COST = 0.001  # 0.1% transaction cost
+    TRANSACTION_COST = 0  # 0.1% transaction cost
     SLIPPAGE = 0.0005  # 0.05% slippage
     
     # Data Configuration
@@ -56,11 +56,11 @@ class Config:
     # Iteration Configuration
     INTERACTIVE = False
 
-    MAX_ITERATIONS = 5 
+    MAX_ITERATIONS = 1
     IMPROVEMENT_THRESHOLD = 5.0  # 5% improvement threshold
     
     # Logging Configuration
-    LOG_LEVEL = "INFO"
+    LOG_LEVEL = "DEBUG"
     LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     
     # LLM Debug Configuration

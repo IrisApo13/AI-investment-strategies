@@ -78,7 +78,7 @@ class InvestmentStrategy:
                     signals.loc[date, 'position_size'] = self.position_size
                     position_entries.append((date, row['Close']))
                     last_action_date = date
-                    logger.debug(f"BUY signal generated on {date} at ${row['Close']:.2f}")
+                    logger.debug(f"BUY signal generated on {date} at ${row['Close']:.2f} position size {self.position_size}")
                 
                 # Check sell conditions - close oldest position if conditions met
                 elif (position_entries and 
@@ -92,7 +92,7 @@ class InvestmentStrategy:
                         signals.loc[date, 'position_size'] = self.position_size
                         position_entries.pop(0)  # Remove the oldest position
                         last_action_date = date
-                        logger.debug(f"SELL signal generated on {date} at ${row['Close']:.2f}")
+                        logger.debug(f"SELL signal generated on {date} at ${row['Close']:.2f} position size {self.position_size}")
             
             num_buy_signals = signals['buy_signal'].sum()
             num_sell_signals = signals['sell_signal'].sum()
