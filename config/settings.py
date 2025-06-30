@@ -30,7 +30,7 @@ class Config:
     DATA_INTERVAL = "1d"  # Daily data
     
     # Strategy Configuration
-    MAX_POSITION_SIZE = 0.3  # Maximum 30% of portfolio in single trade
+    MAX_POSITION_SIZE = 0.33  # Maximum 30% of portfolio in single trade
     MIN_POSITION_SIZE = 0.05  # Minimum 5% position size
     
     # Performance Thresholds

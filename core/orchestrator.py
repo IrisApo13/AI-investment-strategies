@@ -71,7 +71,9 @@ class AIBacktestOrchestrator:
                 
                 # Generate or improve strategy
                 if iteration == 1:
-                    strategy_result = self._generate_initial_strategy()
+                   # strategy_result = self._generate_initial_strategy()
+                   strategy_result = self._use_existing_strategy()
+ 
                 else:
                     if Config.FEEDBACK_STATEGY == "basic_feedback":
                         strategy_result = self._improve_current_strategy(iteration)
@@ -171,6 +173,26 @@ class AIBacktestOrchestrator:
                 'error': str(e)
             }
     
+    def _use_existing_strategy(self) -> Dict:
+
+        test_strategy = {'name': 'AAPL Momentum and Trend-Following Strategy', 
+                    'description': "This strategy combines momentum and trend-following indicators to capitalize on Apple Inc.'s typical market behavior. It uses RSI for momentum, SMA and EMA for trend direction, MACD for confirmation of trend changes, and volume as a confirmation of trend strength.", 
+                    'buy_conditions': ['RSI < 40'], 
+                    'sell_conditions': ['RSI > 90'], 
+                    'position_sizing': 'Fixed percentage of portfolio (30%)', 
+                    'risk_management': 'Stop-loss set at 2.5% below the purchase price. Adjust the stop loss to the entry point once a 3% profit is reached to create a no-loss situation. Sell half the position if the stock reaches a 5% profit to lock in gains while letting the rest run.'
+        }
+
+        # Create strategy object
+        strategy = InvestmentStrategy(test_strategy)
+        
+        return {
+            'success': True,
+            'strategy': strategy,
+        }
+
+
+
     def _generate_initial_strategy(self) -> Dict:
         """Generate the initial strategy for the session."""
         try:

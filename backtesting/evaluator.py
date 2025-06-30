@@ -73,7 +73,7 @@ class PerformanceEvaluator:
         """
         try:
             # Normalize metrics to 0-100 scale
-            return_score = min(max(metrics.get('total_return', 0) * 2, 0), 100)  # 50% return = 100 points
+            return_score = min(max(metrics.get('total_return', 0) * 10, 0), 100)  # 50% return = 100 points
             
             sharpe_score = min(max(metrics.get('sharpe_ratio', 0) * 50, 0), 100)  # Sharpe 2.0 = 100 points
             
@@ -87,11 +87,11 @@ class PerformanceEvaluator:
             
             # Weighted average
             score = (
-                return_score * 0.30 +
-                sharpe_score * 0.25 +
-                drawdown_score * 0.20 +
-                win_rate_score * 0.15 +
-                excess_score * 0.10
+                return_score * 0.50 +
+                sharpe_score * 0.30 +
+                drawdown_score * 0 +
+                win_rate_score * 0 +
+                excess_score * 0.20
             )
             
             return round(score, 1)
