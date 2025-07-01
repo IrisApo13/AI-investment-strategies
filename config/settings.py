@@ -3,6 +3,10 @@ Configuration settings for the AI backtesting system.
 """
 import os
 from typing import List
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 class Config:
     """Configuration class containing all system settings."""
