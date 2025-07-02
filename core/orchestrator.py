@@ -487,7 +487,21 @@ ITERATION COMPARISON:
         try:
             if not filename:
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                filename = f"backtest_session_{results['ticker']}_{timestamp}.json"
+                
+                # Get strategy name for filename
+                strategy_name = "unknown_strategy"
+                if 'strategy_history' in results and results['strategy_history']:
+                    # Use the first strategy name (or best strategy if available)
+                    strategy_name = results['strategy_history'][0].name
+                elif 'best_strategy' in results and results['best_strategy']:
+                    strategy_name = results['best_strategy'].name
+                
+                # Clean strategy name for filename (remove special characters)
+                import re
+                clean_strategy_name = re.sub(r'[^a-zA-Z0-9_\s-]', '', strategy_name)
+                clean_strategy_name = re.sub(r'\s+', '_', clean_strategy_name).strip('_')
+                
+                filename = f"backtest_{results['ticker']}_{clean_strategy_name}_{timestamp}.json"
             
             # Prepare data for serialization
             serializable_results = {
