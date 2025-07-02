@@ -2,5 +2,8 @@
 __pycache__
 venv
 .vscode
-backtest*.json
+backtest*json
 *.log
+experiments/*.png
+experiments/*.csv
+

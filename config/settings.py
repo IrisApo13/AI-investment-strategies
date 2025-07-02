@@ -72,7 +72,7 @@ class Config:
     SHOW_LLM_RESPONSES = True  # Show responses from LLM
     
     # Visualization Configuration
-    SHOW_STRATEGY_PLOTS = True  # Show strategy visualization charts during backtesting
+    SHOW_STRATEGY_PLOTS = False  # Show strategy visualization charts during backtesting
     
     @classmethod
     def validate_config(cls) -> bool:
