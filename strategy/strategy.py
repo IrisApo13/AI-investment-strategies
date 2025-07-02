@@ -610,7 +610,7 @@ Total Sell Signals: {len(sell_signals)}
             if not cleaned_condition:
                 continue
             
-            # Extract indicator names (usually uppercase or with underscores)
+            # Extract indicator names using a more comprehensive approach
             # Look for patterns like RSI, SMA_20, MACD, etc.
             indicator_patterns = [
                 r'\b([A-Z][A-Z_0-9]*)\b',  # RSI, SMA_20, MACD_SIGNAL
@@ -620,6 +620,10 @@ Total Sell Signals: {len(sell_signals)}
                 r'\b(macd)\b',             # macd (lowercase)
                 r'\b(volume_sma)\b',       # volume_sma
                 r'\b(bb_upper|bb_lower|bb_middle)\b',  # Bollinger Bands
+                r'\b(atr)\b',              # atr (lowercase)
+                r'\b(price_change)\b',     # price_change
+                r'\b(volatility)\b',       # volatility
+                r'\b(momentum)\b',         # momentum
             ]
             
             for pattern in indicator_patterns:
@@ -629,30 +633,102 @@ Total Sell Signals: {len(sell_signals)}
                     if match.upper() not in ['OPEN', 'HIGH', 'LOW', 'CLOSE', 'VOLUME']:
                         indicators.add(match)
         
+        # Debug logging
+        logger.debug(f"Extracted indicators from conditions: {list(indicators)}")
         return list(indicators)
     
-    def _add_indicator_thresholds(self, ax: plt.Axes, indicator: str) -> None:
-        """Add common threshold lines for technical indicators."""
+    def _extract_thresholds_from_conditions(self, indicator: str) -> List[Tuple[float, str, str]]:
+        """
+        Extract thresholds for a specific indicator from strategy conditions.
+        
+        Args:
+            indicator: The indicator name to extract thresholds for
+            
+        Returns:
+            List of tuples: (threshold_value, condition_type, color)
+        """
+        thresholds = []
         indicator_lower = indicator.lower()
         
-        # RSI thresholds
-        if 'rsi' in indicator_lower:
-            ax.axhline(y=70, color='red', linestyle='--', alpha=0.7, label='Overbought (70)')
-            ax.axhline(y=30, color='green', linestyle='--', alpha=0.7, label='Oversold (30)')
-            ax.set_ylim(0, 100)
+        all_conditions = self.buy_conditions + self.sell_conditions
         
-        # Stochastic thresholds
-        elif 'stoch' in indicator_lower or 'k%' in indicator_lower or 'd%' in indicator_lower:
-            ax.axhline(y=80, color='red', linestyle='--', alpha=0.7, label='Overbought (80)')
-            ax.axhline(y=20, color='green', linestyle='--', alpha=0.7, label='Oversold (20)')
-            ax.set_ylim(0, 100)
+        for condition in all_conditions:
+            # Clean the condition first
+            cleaned_condition = self._clean_condition(condition)
+            if not cleaned_condition:
+                continue
+            
+            # Check if this condition involves our indicator
+            if indicator_lower not in cleaned_condition.lower():
+                continue
+            
+            # Extract threshold value and operator
+            # Pattern: INDICATOR OPERATOR VALUE
+            pattern = rf'\b{re.escape(indicator)}\s*([<>=!]+)\s*([\d.]+(?:\s*\*\s*[\d.]+)?)'
+            match = re.search(pattern, cleaned_condition, re.IGNORECASE)
+            
+            if match:
+                operator = match.group(1)
+                value_str = match.group(2)
+                
+                # Handle multiplication (e.g., "SMA_20 * 1.02")
+                if '*' in value_str:
+                    try:
+                        parts = value_str.split('*')
+                        base_value = float(parts[0].strip())
+                        multiplier = float(parts[1].strip())
+                        threshold_value = base_value * multiplier
+                    except (ValueError, IndexError):
+                        continue
+                else:
+                    try:
+                        threshold_value = float(value_str)
+                    except ValueError:
+                        continue
+                
+                # Determine condition type and color
+                if operator in ['<', '<=']:
+                    condition_type = 'Buy Signal'
+                    color = 'green'
+                elif operator in ['>', '>=']:
+                    condition_type = 'Sell Signal'
+                    color = 'red'
+                else:
+                    condition_type = 'Signal'
+                    color = 'blue'
+                
+                thresholds.append((threshold_value, condition_type, color))
         
-        # MACD zero line
-        elif 'macd' in indicator_lower and 'signal' not in indicator_lower:
-            ax.axhline(y=0, color='black', linestyle='-', alpha=0.5, label='Zero Line')
+        return thresholds
+    
+    def _add_indicator_thresholds(self, ax: plt.Axes, indicator: str) -> None:
+        """Add threshold lines for technical indicators based on strategy conditions."""
+        indicator_lower = indicator.lower()
         
-        # Williams %R thresholds
-        elif 'williams' in indicator_lower or '%r' in indicator_lower:
-            ax.axhline(y=-20, color='red', linestyle='--', alpha=0.7, label='Overbought (-20)')
-            ax.axhline(y=-80, color='green', linestyle='--', alpha=0.7, label='Oversold (-80)')
-            ax.set_ylim(-100, 0) 
+        # Extract thresholds from strategy conditions
+        strategy_thresholds = self._extract_thresholds_from_conditions(indicator)
+        
+        # Add strategy-specific thresholds
+        for threshold_value, condition_type, color in strategy_thresholds:
+            ax.axhline(y=threshold_value, color=color, linestyle='--', alpha=0.7, 
+                      label=f'{condition_type} ({threshold_value:.1f})')
+        
+        # Add common default thresholds if no strategy thresholds found
+        if not strategy_thresholds:
+            if 'rsi' in indicator_lower:
+                ax.axhline(y=70, color='red', linestyle='--', alpha=0.3, label='Standard Overbought (70)')
+                ax.axhline(y=30, color='green', linestyle='--', alpha=0.3, label='Standard Oversold (30)')
+                ax.set_ylim(0, 100)
+            
+            elif 'stoch' in indicator_lower or 'k%' in indicator_lower or 'd%' in indicator_lower:
+                ax.axhline(y=80, color='red', linestyle='--', alpha=0.3, label='Standard Overbought (80)')
+                ax.axhline(y=20, color='green', linestyle='--', alpha=0.3, label='Standard Oversold (20)')
+                ax.set_ylim(0, 100)
+            
+            elif 'macd' in indicator_lower and 'signal' not in indicator_lower:
+                ax.axhline(y=0, color='black', linestyle='-', alpha=0.5, label='Zero Line')
+            
+            elif 'williams' in indicator_lower or '%r' in indicator_lower:
+                ax.axhline(y=-20, color='red', linestyle='--', alpha=0.3, label='Standard Overbought (-20)')
+                ax.axhline(y=-80, color='green', linestyle='--', alpha=0.3, label='Standard Oversold (-80)')
+                ax.set_ylim(-100, 0) 

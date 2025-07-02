@@ -23,6 +23,10 @@ def setup_logging():
             logging.FileHandler('ai_backtest.log')
         ]
     )
+    
+    # Suppress matplotlib debug messages
+    logging.getLogger('matplotlib').setLevel(logging.WARNING)
+    logging.getLogger('matplotlib.font_manager').setLevel(logging.WARNING)
 
 def print_banner():
     """Print application banner."""
