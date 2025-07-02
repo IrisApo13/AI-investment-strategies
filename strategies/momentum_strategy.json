@@ -1,0 +1,12 @@
+{
+  "name": "Momentum Strategy",
+  "description": "A momentum-based strategy that buys when momentum is positive and sells when momentum turns negative",
+  "buy_conditions": [
+    "momentum > 0"
+  ],
+  "sell_conditions": [
+    "momentum < 0"
+  ],
+  "position_sizing": "10% of portfolio",
+  "risk_management": "5% stop loss"
+} 

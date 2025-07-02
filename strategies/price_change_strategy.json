@@ -1,0 +1,12 @@
+{
+  "name": "Price Change Strategy",
+  "description": "A price change-based strategy that buys when price increases by more than 15% and sells when price decreases by more than 10%",
+  "buy_conditions": [
+    "price_change > 15%"
+  ],
+  "sell_conditions": [
+    "price_change < -10%"
+  ],
+  "position_sizing": "15% of portfolio",
+  "risk_management": "7% stop loss"
+} 

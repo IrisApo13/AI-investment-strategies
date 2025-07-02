@@ -1,0 +1,12 @@
+{
+  "name": "MACD Strategy",
+  "description": "A MACD-based strategy that buys when MACD is strongly positive (> 0.2) and sells when MACD is strongly negative (< -0.2)",
+  "buy_conditions": [
+    "MACD > 0.2"
+  ],
+  "sell_conditions": [
+    "MACD < -0.2"
+  ],
+  "position_sizing": "25% of portfolio",
+  "risk_management": "3% stop loss"
+} 

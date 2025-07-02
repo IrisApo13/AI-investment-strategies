@@ -1,0 +1,12 @@
+{
+  "name": "RSI Strategy",
+  "description": "A simple RSI-based strategy that buys when RSI is oversold (< 30) and sells when RSI is overbought (> 70)",
+  "buy_conditions": [
+    "RSI < 30"
+  ],
+  "sell_conditions": [
+    "RSI > 70"
+  ],
+  "position_sizing": "20% of portfolio",
+  "risk_management": "5% stop loss"
+} 

@@ -1,0 +1,10 @@
+// using this list of technical indicators create 
+// a simple policy
+
+TITLE, indicator, buy condition, sell condition
+
+
+RSI strategy, RSI, RSI < 30, RSI > 70
+MACD strategy, MACD, MACD > 0.2, MACD < -0.2
+Price_change strategy, price_change, price_change > 15%, price_change < -10%
+Momentum strategy, momentum, momentum > 0, momentum < 0
