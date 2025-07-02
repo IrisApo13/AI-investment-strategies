@@ -92,7 +92,7 @@ def interactive_mode():
     # Run backtesting session
     run_backtesting_session(ticker, max_iterations, target_score)
 
-def run_backtesting_session(ticker: str, max_iterations: int, target_score: float):
+def run_backtesting_session(ticker: str, max_iterations: int, target_score: float, strategy_file: str = None):
     """Run a backtesting session."""
     try:
         print(f"\n🚀 Starting AI backtesting session for {ticker}...")
@@ -104,7 +104,8 @@ def run_backtesting_session(ticker: str, max_iterations: int, target_score: floa
         results = orchestrator.run_backtesting_session(
             ticker=ticker,
             max_iterations=max_iterations,
-            target_score=target_score
+            target_score=target_score,
+            strategy_file=strategy_file
         )
         
         # Handle results
@@ -152,6 +153,7 @@ Examples:
   python main.py AAPL                     # Quick run with AAPL
   python main.py TSLA --iterations 5      # Run TSLA with 5 iterations
   python main.py MSFT --target-score 75   # Run MSFT targeting 75% score
+  python main.py AAPL --strategy-file my_strategy.json  # Use custom strategy
         """
     )
     
@@ -173,6 +175,12 @@ Examples:
         type=float,
         default=80.0,
         help='Target performance score to achieve (default: 80.0)'
+    )
+    
+    parser.add_argument(
+        '--strategy-file',
+        type=str,
+        help='Path to JSON file containing strategy configuration'
     )
     
     parser.add_argument(
@@ -208,7 +216,7 @@ Examples:
     if args.ticker:
         # Command line mode
         print(f"\n🎯 Running backtesting session for {args.ticker}")
-        run_backtesting_session(args.ticker, args.iterations, args.target_score)
+        run_backtesting_session(args.ticker, args.iterations, args.target_score, args.strategy_file)
     else:
         # Interactive mode
         interactive_mode()

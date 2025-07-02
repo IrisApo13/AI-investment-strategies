@@ -42,7 +42,8 @@ class AIBacktestOrchestrator:
     def run_backtesting_session(self, 
                                ticker: str, 
                                max_iterations: int = None,
-                               target_score: float = None) -> Dict:
+                               target_score: float = None,
+                               strategy_file: str = None) -> Dict:
         """
         Run a complete AI backtesting session with iterative improvement.
         
@@ -57,6 +58,9 @@ class AIBacktestOrchestrator:
         try:
             max_iterations = max_iterations or Config.MAX_ITERATIONS
             target_score = target_score or 80.0
+            
+            # Store strategy file for later use
+            self.strategy_file = strategy_file
             
             logger.info(f"Starting backtesting session for {ticker}")
             
@@ -174,22 +178,47 @@ class AIBacktestOrchestrator:
             }
     
     def _use_existing_strategy(self) -> Dict:
+        """Load strategy from file or use default test strategy."""
+        try:
+            from utils.strategy_loader import load_strategy_from_file
+            
+            # Try to load from file if provided
+            if hasattr(self, 'strategy_file') and self.strategy_file:
+                logger.info(f"Loading strategy from file: {self.strategy_file}")
+                strategy_dict = load_strategy_from_file(self.strategy_file)
+                
+                if strategy_dict:
+                    strategy = InvestmentStrategy(strategy_dict)
+                    return {
+                        'success': True,
+                        'strategy': strategy,
+                    }
+                else:
+                    logger.warning(f"Failed to load strategy from {self.strategy_file}, using default")
+            
+            # Fall back to default test strategy
+            test_strategy = {'name': 'AAPL Momentum and Trend-Following Strategy', 
+                        'description': "This strategy combines momentum and trend-following indicators to capitalize on Apple Inc.'s typical market behavior. It uses RSI for momentum, SMA and EMA for trend direction, MACD for confirmation of trend changes, and volume as a confirmation of trend strength.", 
+                        'buy_conditions': ['RSI < 40'], 
+                        'sell_conditions': ['RSI > 70'], 
+                        'position_sizing': 'Fixed percentage of portfolio (30%)', 
+                        'risk_management': 'Stop-loss set at 2.5% below the purchase price. Adjust the stop loss to the entry point once a 3% profit is reached to create a no-loss situation. Sell half the position if the stock reaches a 5% profit to lock in gains while letting the rest run.'
+            }
 
-        test_strategy = {'name': 'AAPL Momentum and Trend-Following Strategy', 
-                    'description': "This strategy combines momentum and trend-following indicators to capitalize on Apple Inc.'s typical market behavior. It uses RSI for momentum, SMA and EMA for trend direction, MACD for confirmation of trend changes, and volume as a confirmation of trend strength.", 
-                    'buy_conditions': ['RSI < 40'], 
-                    'sell_conditions': ['RSI > 70'], 
-                    'position_sizing': 'Fixed percentage of portfolio (30%)', 
-                    'risk_management': 'Stop-loss set at 2.5% below the purchase price. Adjust the stop loss to the entry point once a 3% profit is reached to create a no-loss situation. Sell half the position if the stock reaches a 5% profit to lock in gains while letting the rest run.'
-        }
-
-        # Create strategy object
-        strategy = InvestmentStrategy(test_strategy)
-        
-        return {
-            'success': True,
-            'strategy': strategy,
-        }
+            # Create strategy object
+            strategy = InvestmentStrategy(test_strategy)
+            
+            return {
+                'success': True,
+                'strategy': strategy,
+            }
+            
+        except Exception as e:
+            logger.error(f"Error loading strategy: {str(e)}")
+            return {
+                'success': False,
+                'error': str(e)
+            }
 
 
 

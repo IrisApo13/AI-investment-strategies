@@ -1,0 +1,15 @@
+{
+  "name": "MACD Trend Strategy",
+  "description": "A trend-following strategy using MACD crossover signals with RSI confirmation",
+  "buy_conditions": [
+    "MACD > MACD_signal",
+    "RSI < 60",
+    "Close > SMA_50"
+  ],
+  "sell_conditions": [
+    "MACD < MACD_signal",
+    "RSI > 80"
+  ],
+  "position_sizing": "25% of portfolio",
+  "risk_management": "5% stop loss"
+} 

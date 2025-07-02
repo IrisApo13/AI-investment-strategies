@@ -1,0 +1,15 @@
+{
+  "name": "RSI Momentum Strategy",
+  "description": "A momentum-based strategy using RSI with volume confirmation and trend following",
+  "buy_conditions": [
+    "RSI < 35",
+    "Close > SMA_20",
+    "Volume > volume_sma * 1.2"
+  ],
+  "sell_conditions": [
+    "RSI > 75",
+    "Close < SMA_20 * 0.98"
+  ],
+  "position_sizing": "15% of portfolio",
+  "risk_management": "3% stop loss with trailing stop"
+} 
