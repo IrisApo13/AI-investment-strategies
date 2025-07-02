@@ -75,8 +75,8 @@ class AIBacktestOrchestrator:
                 
                 # Generate or improve strategy
                 if iteration == 1:
-                   # strategy_result = self._generate_initial_strategy()
-                   strategy_result = self._use_existing_strategy()
+                   strategy_result = self._generate_initial_strategy()
+                   #strategy_result = self._use_existing_strategy()
  
                 else:
                     if Config.FEEDBACK_STATEGY == "basic_feedback":
