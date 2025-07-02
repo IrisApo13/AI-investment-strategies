@@ -1,55 +1,24 @@
-# Test RSI Strategy
-python ../main.py TSLA --strategy-file ../strategies/rsi_strategy.json --iterations 1
+#!/bin/bash
 
-# Test MACD Strategy  
-python ../main.py TSLA --strategy-file ../strategies/macd_strategy.json --iterations 1
+# Define arrays for companies and strategies
+companies=("TSLA" "AAPL" "GOOG" "MSFT")
+strategies=("rsi_strategy.json" "macd_strategy.json" "price_change_strategy.json" "momentum_strategy.json")
 
-# Test Price Change Strategy
-python ../main.py TSLA --strategy-file ../strategies/price_change_strategy.json --iterations 1
+# Loop through each company
+for company in "${companies[@]}"; do
+    echo "Testing strategies for $company..."
+    
+    # Loop through each strategy
+    for strategy in "${strategies[@]}"; do
+        echo "Running $strategy for $company..."
+        python ../main.py "$company" --strategy-file "../strategies/$strategy" --iterations 1
+        echo "Completed $strategy for $company"
+        echo "----------------------------------------"
+    done
+    
+    echo "Completed all strategies for $company"
+    echo "========================================"
+done
 
-# Test Momentum Strategy
-python ../main.py TSLA --strategy-file ../strategies/momentum_strategy.json --iterations 1
-
-
-
-
-# Test RSI Strategy
-python ../main.py AAPL --strategy-file ../strategies/rsi_strategy.json --iterations 1
-
-# Test MACD Strategy  
-python ../main.py AAPL --strategy-file ../strategies/macd_strategy.json --iterations 1
-
-# Test Price Change Strategy
-python ../main.py AAPL --strategy-file ../strategies/price_change_strategy.json --iterations 1
-
-# Test Momentum Strategy
-python ../main.py AAPL --strategy-file ../strategies/momentum_strategy.json --iterations 1
-
-
-
-# Test RSI Strategy
-python ../main.py GOOG --strategy-file ../strategies/rsi_strategy.json --iterations 1
-
-# Test MACD Strategy  
-python ../main.py GOOG --strategy-file ../strategies/macd_strategy.json --iterations 1
-
-# Test Price Change Strategy
-python ../main.py GOOG --strategy-file ../strategies/price_change_strategy.json --iterations 1
-
-# Test Momentum Strategy
-python ../main.py GOOG --strategy-file ../strategies/momentum_strategy.json --iterations 1
-
-
-
-# Test RSI Strategy
-python ../main.py MSFT --strategy-file ../strategies/rsi_strategy.json --iterations 1
-
-# Test MACD Strategy  
-python ../main.py MSFT --strategy-file ../strategies/macd_strategy.json --iterations 1
-
-# Test Price Change Strategy
-python ../main.py MSFT --strategy-file ../strategies/price_change_strategy.json --iterations 1
-
-# Test Momentum Strategy
-python ../main.py MSFT --strategy-file ../strategies/momentum_strategy.json --iterations 1
+echo "All backtesting completed!"
 
