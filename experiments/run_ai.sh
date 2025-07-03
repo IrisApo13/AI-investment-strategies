@@ -2,10 +2,10 @@
 
 # Configuration
 #Set the number of times to run each test
-NUM_RUNS=3 
+NUM_RUNS=4
 
 # Define arrays for companies and strategies
-companies=("TSLA" "AAPL" "GOOG" "MSFT")
+companies=("TSLA" "AAPL" "GOOG" "MSFT" "INTC" "UNH")
 
 echo "Starting AI backtesting with $NUM_RUNS runs per test..."
 echo "Total tests to run: $(( ${#companies[@]} * ${#strategies[@]} * NUM_RUNS ))"
