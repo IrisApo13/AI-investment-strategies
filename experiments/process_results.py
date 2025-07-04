@@ -15,6 +15,7 @@ import numpy as np
 def process_experiment_files(experiments_dir="."):
     """
     Process all JSON files in the experiments directory and extract strategy scores and excess returns.
+    Processes all strategies and all iterations from each file.
     
     Returns:
         tuple: (results_scores, results_excess_returns) - Both dictionaries with structure {ticker: {strategy_name: value}}
@@ -41,16 +42,26 @@ def process_experiment_files(experiments_dir="."):
                 print(f"Warning: Skipping {file_path} - missing required data")
                 continue
             
-            # Get the strategy name, score, and excess return
-            strategy_name = strategies[0].get('name', 'Unknown Strategy')
-            score = performance_history[0].get('performance_score', 0)
-            excess_return = performance_history[0].get('excess_return', 0)
-            
-            # Store the results
-            results_scores[ticker][strategy_name] = score
-            results_excess_returns[ticker][strategy_name] = excess_return
-            
-            print(f"Processed {ticker} - {strategy_name}: Score={score:.1f}, Excess Return={excess_return:.1f}%")
+            # Process all strategies and their corresponding performance entries
+            for i, strategy in enumerate(strategies):
+                strategy_name = strategy.get('name', f'Unknown Strategy {i+1}')
+                
+                # Get the corresponding performance entry (if available)
+                if i < len(performance_history):
+                    performance = performance_history[i]
+                    score = performance.get('performance_score', 0)
+                    excess_return = performance.get('excess_return', 0)
+                else:
+                    # If no corresponding performance entry, use the first one
+                    performance = performance_history[0] if performance_history else {}
+                    score = performance.get('performance_score', 0)
+                    excess_return = performance.get('excess_return', 0)
+                
+                # Store the results
+                results_scores[ticker][strategy_name] = score
+                results_excess_returns[ticker][strategy_name] = excess_return
+                
+                print(f"Processed {ticker} - {strategy_name}: Score={score:.1f}, Excess Return={excess_return:.1f}%")
             
         except Exception as e:
             print(f"Error processing {file_path}: {e}")
