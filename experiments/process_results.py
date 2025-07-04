@@ -92,16 +92,12 @@ def plot_table(df):
     # Transpose the dataframe so companies become columns and strategies become rows
     df_transposed = df.T
     
-    # Add average row
-    df_with_avg = df_transposed.copy()
-    df_with_avg['Average'] = df_transposed.mean(axis=1)
-    
     # Prepare table data
     table_data = []
-    for strategy in df_with_avg.index:
+    for strategy in df_transposed.index:
         row = [strategy[:30] + '...' if len(strategy) > 30 else strategy]  # Truncate long strategy names
-        for col in df_with_avg.columns:
-            value = df_with_avg.loc[strategy, col]
+        for col in df_transposed.columns:
+            value = df_transposed.loc[strategy, col]
             if pd.isna(value):
                 row.append("N/A")
             else:
@@ -109,7 +105,7 @@ def plot_table(df):
         table_data.append(row)
     
     # Create column headers
-    col_labels = ['Strategy'] + list(df_with_avg.columns)
+    col_labels = ['Strategy'] + list(df_transposed.columns)
     
     # Create the table
     table = ax.table(cellText=table_data, colLabels=col_labels, 
@@ -243,14 +239,12 @@ def print_table(df):
     header = f"{'Strategy':<35} |"
     for company in company_names:
         header += f" {company:<8} |"
-    header += f" {'Average':<8}"
     print(header)
     print("-" * (len(header) + 10))
     
     # Print each row with formatted data
     for strategy in df_transposed.index:
         row = df_transposed.loc[strategy]
-        avg_score = row.mean()
         
         # Start with strategy name (shortened for display)
         short_strategy = strategy[:34] if len(strategy) > 34 else strategy
@@ -264,8 +258,6 @@ def print_table(df):
             else:
                 row_str += f" {score:.1f}{'':<7} |"
         
-        # Add average
-        row_str += f" {avg_score:.1f}"
         print(row_str)
     
     print("-" * (len(header) + 10))
@@ -346,14 +338,12 @@ def print_excess_returns_table(df_excess_returns):
     header = f"{'Strategy':<35} |"
     for company in company_names:
         header += f" {company:<8} |"
-    header += f" {'Average':<8}"
     print(header)
     print("-" * (len(header) + 10))
     
     # Print each row with formatted data
     for strategy in df_transposed.index:
         row = df_transposed.loc[strategy]
-        avg_excess_return = row.mean()
         
         # Start with strategy name (shortened for display)
         short_strategy = strategy[:34] if len(strategy) > 34 else strategy
@@ -367,8 +357,6 @@ def print_excess_returns_table(df_excess_returns):
             else:
                 row_str += f" {excess_return:+.1f}{'':<7} |"  # Use + sign for positive values
         
-        # Add average
-        row_str += f" {avg_excess_return:+.1f}"
         print(row_str)
     
     print("-" * (len(header) + 10))
@@ -423,16 +411,12 @@ def plot_excess_returns_table(df_excess_returns):
     # Transpose the dataframe so companies become columns and strategies become rows
     df_transposed = df_excess_returns.T
     
-    # Add average row
-    df_with_avg = df_transposed.copy()
-    df_with_avg['Average'] = df_transposed.mean(axis=1)
-    
     # Prepare table data
     table_data = []
-    for strategy in df_with_avg.index:
+    for strategy in df_transposed.index:
         row = [strategy[:30] + '...' if len(strategy) > 30 else strategy]  # Truncate long strategy names
-        for col in df_with_avg.columns:
-            value = df_with_avg.loc[strategy, col]
+        for col in df_transposed.columns:
+            value = df_transposed.loc[strategy, col]
             if pd.isna(value):
                 row.append("N/A")
             else:
@@ -440,7 +424,7 @@ def plot_excess_returns_table(df_excess_returns):
         table_data.append(row)
     
     # Create column headers
-    col_labels = ['Strategy'] + list(df_with_avg.columns)
+    col_labels = ['Strategy'] + list(df_transposed.columns)
     
     # Create the table
     table = ax.table(cellText=table_data, colLabels=col_labels, 
