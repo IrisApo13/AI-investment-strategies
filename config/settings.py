@@ -47,7 +47,7 @@ class Config:
     # no_feedback: each run generates a new strategy 
     # basic_feedback: the feedback is the performance of the last strategy 
     
-    FEEDBACK_STATEGY = "no_feedback"
+    FEEDBACK_STATEGY = "basic_feedback"
 
 
     # Technical Indicators
