@@ -3,7 +3,7 @@ Iterative strategy improvement system using LLM feedback.
 """
 import pandas as pd
 import logging
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 import json
 import time
 
@@ -12,6 +12,7 @@ from analysis.performance_analyzer import PerformanceAnalyzer
 from strategy.strategy import InvestmentStrategy
 from backtesting.simulator import PortfolioSimulator
 from data.stock_data import StockDataProvider
+from config.settings import Config
 
 logger = logging.getLogger(__name__)
 
@@ -69,11 +70,18 @@ class IterativeStrategyImprover:
                 
                 # Generate feedback for next iteration (if not last iteration)
                 if iteration < max_iterations - 1:
-                    feedback = self.analyzer.generate_feedback_for_next_iteration(result['analysis'])
-                    logger.info("Generating improved strategy based on feedback...")
+                    # Choose feedback strategy based on configuration
+                    if Config.FEEDBACK_STATEGY == "advanced_feedback":
+                        feedback = self._generate_enhanced_feedback(result)
+                        logger.info("Generating improved strategy based on enhanced feedback with trade analysis...")
+                    else:
+                        feedback = self.analyzer.generate_feedback_for_next_iteration(result['analysis'])
+                        logger.info("Generating improved strategy based on basic feedback...")
                     
                     # Generate improved strategy
                     improved_strategy = self._generate_improved_strategy(current_strategy, feedback)
+                    
+                    logger.debug(f"Improved strategy: {improved_strategy}")
                     
                     if improved_strategy:
                         current_strategy = improved_strategy
@@ -137,6 +145,7 @@ class IterativeStrategyImprover:
                 'strategy': strategy_dict,
                 'performance': performance,
                 'analysis': analysis,
+                'trades_df': trades_df,  # Include trades for enhanced feedback
                 'num_signals': {
                     'buy': signals['buy_signal'].sum(),
                     'sell': signals['sell_signal'].sum()
@@ -157,27 +166,270 @@ class IterativeStrategyImprover:
                 'strategy': strategy_dict,
                 'error': str(e),
                 'performance': {},
-                'analysis': {}
+                'analysis': {},
+                'trades_df': pd.DataFrame()
             }
+    
+    def _analyze_best_and_worst_trades(self, trades_df: pd.DataFrame) -> Tuple[List[Dict], List[Dict]]:
+        """
+        Analyze and extract the best and worst trades from the trading history.
+        
+        Args:
+            trades_df: DataFrame containing trade history
+            
+        Returns:
+            Tuple of (best_trades, worst_trades) - each containing trade details
+        """
+        try:
+            if trades_df.empty:
+                return [], []
+            
+            # Group trades into buy-sell pairs
+            buy_trades = trades_df[trades_df['action'] == 'BUY'].copy()
+            sell_trades = trades_df[trades_df['action'] == 'SELL'].copy()
+            
+            if len(buy_trades) == 0 or len(sell_trades) == 0:
+                return [], []
+            
+            # Calculate trade returns for each buy-sell pair
+            trade_pairs = []
+            for i, sell_trade in sell_trades.iterrows():
+                # Find the most recent buy trade before this sell
+                buy_trades_before = buy_trades[buy_trades.index < i]
+                if len(buy_trades_before) > 0:
+                    buy_trade = buy_trades_before.iloc[-1]  # Most recent buy
+                    
+                    # Calculate trade return
+                    trade_return = (sell_trade['price'] - buy_trade['price']) / buy_trade['price'] * 100
+                    
+                    # Calculate trade duration
+                    duration_days = (sell_trade.name - buy_trade.name).days
+                    
+                    trade_pair = {
+                        'buy_date': buy_trade.name,
+                        'sell_date': sell_trade.name,
+                        'buy_price': buy_trade['price'],
+                        'sell_price': sell_trade['price'],
+                        'return_pct': trade_return,
+                        'duration_days': duration_days,
+                        'shares': buy_trade['shares'],
+                        'buy_metrics': buy_trade['metrics'],
+                        'sell_metrics': sell_trade['metrics'],
+                        'transaction_cost': buy_trade['transaction_cost'] + sell_trade['transaction_cost']
+                    }
+                    trade_pairs.append(trade_pair)
+            
+            if not trade_pairs:
+                return [], []
+            
+            # Sort by return to find best and worst
+            trade_pairs.sort(key=lambda x: x['return_pct'], reverse=True)
+            
+            # Get top 2 best and bottom 2 worst trades
+            best_trades = trade_pairs[:2]
+            worst_trades = trade_pairs[-2:] if len(trade_pairs) >= 2 else trade_pairs
+            
+            logger.info(f"Analyzed {len(trade_pairs)} trades. Best: {best_trades[0]['return_pct']:.1f}%, Worst: {worst_trades[0]['return_pct']:.1f}%")
+            
+            return best_trades, worst_trades
+            
+        except Exception as e:
+            logger.error(f"Error analyzing trades: {str(e)}")
+            return [], []
+    
+    def _format_trade_analysis_for_llm(self, best_trades: List[Dict], worst_trades: List[Dict]) -> str:
+        """
+        Format trade analysis into a structured format for LLM feedback.
+        
+        Args:
+            best_trades: List of best performing trades
+            worst_trades: List of worst performing trades
+            
+        Returns:
+            Formatted string for LLM consumption
+        """
+        try:
+            trade_analysis = "\nTRADE ANALYSIS - KEY INSIGHTS:\n"
+            trade_analysis += "=" * 50 + "\n\n"
+            
+            # Best trades analysis
+            trade_analysis += "🏆 BEST PERFORMING TRADES:\n"
+            trade_analysis += "-" * 30 + "\n"
+            
+            for i, trade in enumerate(best_trades, 1):
+                trade_analysis += f"Best Trade #{i}:\n"
+                trade_analysis += f"  Return: {trade['return_pct']:.1f}%\n"
+                trade_analysis += f"  Duration: {trade['duration_days']} days\n"
+                trade_analysis += f"  Buy Date: {trade['buy_date'].strftime('%Y-%m-%d')}\n"
+                trade_analysis += f"  Sell Date: {trade['sell_date'].strftime('%Y-%m-%d')}\n"
+                trade_analysis += f"  Buy Price: ${trade['buy_price']:.2f}\n"
+                trade_analysis += f"  Sell Price: ${trade['sell_price']:.2f}\n"
+                
+                # Market conditions at entry
+                buy_metrics = trade['buy_metrics']
+                trade_analysis += f"  Entry Conditions:\n"
+                trade_analysis += f"    - RSI: {buy_metrics.get('RSI', 'N/A'):.1f}\n"
+                trade_analysis += f"    - Close: ${buy_metrics.get('Close', 'N/A'):.2f}\n"
+                trade_analysis += f"    - SMA_20: ${buy_metrics.get('SMA_20', 'N/A'):.2f}\n"
+                trade_analysis += f"    - Volume: {buy_metrics.get('Volume', 'N/A'):,.0f}\n"
+                trade_analysis += f"    - MACD: {buy_metrics.get('MACD', 'N/A'):.4f}\n"
+                
+                # Market conditions at exit
+                sell_metrics = trade['sell_metrics']
+                trade_analysis += f"  Exit Conditions:\n"
+                trade_analysis += f"    - RSI: {sell_metrics.get('RSI', 'N/A'):.1f}\n"
+                trade_analysis += f"    - Close: ${sell_metrics.get('Close', 'N/A'):.2f}\n"
+                trade_analysis += f"    - SMA_20: ${sell_metrics.get('SMA_20', 'N/A'):.2f}\n"
+                trade_analysis += f"    - Volume: {sell_metrics.get('Volume', 'N/A'):,.0f}\n"
+                trade_analysis += f"    - MACD: {sell_metrics.get('MACD', 'N/A'):.4f}\n"
+                trade_analysis += "\n"
+            
+            # Worst trades analysis
+            trade_analysis += "📉 WORST PERFORMING TRADES:\n"
+            trade_analysis += "-" * 30 + "\n"
+            
+            for i, trade in enumerate(worst_trades, 1):
+                trade_analysis += f"Worst Trade #{i}:\n"
+                trade_analysis += f"  Return: {trade['return_pct']:.1f}%\n"
+                trade_analysis += f"  Duration: {trade['duration_days']} days\n"
+                trade_analysis += f"  Buy Date: {trade['buy_date'].strftime('%Y-%m-%d')}\n"
+                trade_analysis += f"  Sell Date: {trade['sell_date'].strftime('%Y-%m-%d')}\n"
+                trade_analysis += f"  Buy Price: ${trade['buy_price']:.2f}\n"
+                trade_analysis += f"  Sell Price: ${trade['sell_price']:.2f}\n"
+                
+                # Market conditions at entry
+                buy_metrics = trade['buy_metrics']
+                trade_analysis += f"  Entry Conditions:\n"
+                trade_analysis += f"    - RSI: {buy_metrics.get('RSI', 'N/A'):.1f}\n"
+                trade_analysis += f"    - Close: ${buy_metrics.get('Close', 'N/A'):.2f}\n"
+                trade_analysis += f"    - SMA_20: ${buy_metrics.get('SMA_20', 'N/A'):.2f}\n"
+                trade_analysis += f"    - Volume: {buy_metrics.get('Volume', 'N/A'):,.0f}\n"
+                trade_analysis += f"    - MACD: {buy_metrics.get('MACD', 'N/A'):.4f}\n"
+                
+                # Market conditions at exit
+                sell_metrics = trade['sell_metrics']
+                trade_analysis += f"  Exit Conditions:\n"
+                trade_analysis += f"    - RSI: {sell_metrics.get('RSI', 'N/A'):.1f}\n"
+                trade_analysis += f"    - Close: ${sell_metrics.get('Close', 'N/A'):.2f}\n"
+                trade_analysis += f"    - SMA_20: ${sell_metrics.get('SMA_20', 'N/A'):.2f}\n"
+                trade_analysis += f"    - Volume: {sell_metrics.get('Volume', 'N/A'):,.0f}\n"
+                trade_analysis += f"    - MACD: {sell_metrics.get('MACD', 'N/A'):.4f}\n"
+                trade_analysis += "\n"
+            
+            # Key insights from trade analysis
+            trade_analysis += "🔍 KEY INSIGHTS FROM TRADE ANALYSIS:\n"
+            trade_analysis += "-" * 40 + "\n"
+            
+            if best_trades and worst_trades:
+                # Compare entry conditions
+                best_avg_rsi = sum(t['buy_metrics'].get('RSI', 50) for t in best_trades) / len(best_trades)
+                worst_avg_rsi = sum(t['buy_metrics'].get('RSI', 50) for t in worst_trades) / len(worst_trades)
+                
+                best_avg_duration = sum(t['duration_days'] for t in best_trades) / len(best_trades)
+                worst_avg_duration = sum(t['duration_days'] for t in worst_trades) / len(worst_trades)
+                
+                trade_analysis += f"• Best trades had average RSI of {best_avg_rsi:.1f} vs {worst_avg_rsi:.1f} for worst trades\n"
+                trade_analysis += f"• Best trades held for {best_avg_duration:.0f} days vs {worst_avg_duration:.0f} days for worst trades\n"
+                
+                # Volume analysis
+                best_volume_ratio = []
+                worst_volume_ratio = []
+                for trade in best_trades:
+                    if 'Volume' in trade['buy_metrics'] and 'volume_sma' in trade['buy_metrics']:
+                        ratio = trade['buy_metrics']['Volume'] / trade['buy_metrics']['volume_sma']
+                        best_volume_ratio.append(ratio)
+                
+                for trade in worst_trades:
+                    if 'Volume' in trade['buy_metrics'] and 'volume_sma' in trade['buy_metrics']:
+                        ratio = trade['buy_metrics']['Volume'] / trade['buy_metrics']['volume_sma']
+                        worst_volume_ratio.append(ratio)
+                
+                if best_volume_ratio and worst_volume_ratio:
+                    avg_best_volume = sum(best_volume_ratio) / len(best_volume_ratio)
+                    avg_worst_volume = sum(worst_volume_ratio) / len(worst_volume_ratio)
+                    trade_analysis += f"• Best trades had {avg_best_volume:.1f}x average volume vs {avg_worst_volume:.1f}x for worst trades\n"
+            
+            return trade_analysis
+            
+        except Exception as e:
+            logger.error(f"Error formatting trade analysis: {str(e)}")
+            return "Error analyzing trades"
+    
+    def _generate_enhanced_feedback(self, result: Dict) -> str:
+        """
+        Generate enhanced feedback including trade analysis for next iteration.
+        
+        Args:
+            result: Dictionary containing test results and analysis
+            
+        Returns:
+            Enhanced feedback string for LLM
+        """
+        try:
+            # Get basic feedback from analyzer
+            basic_feedback = self.analyzer.generate_feedback_for_next_iteration(result['analysis'])
+            
+            # Get trade analysis
+            trades_df = result.get('trades_df', pd.DataFrame())
+            best_trades, worst_trades = self._analyze_best_and_worst_trades(trades_df)
+            
+            # Format trade analysis
+            trade_analysis = self._format_trade_analysis_for_llm(best_trades, worst_trades)
+            
+            # Combine into enhanced feedback
+            enhanced_feedback = f"""
+{basic_feedback}
+
+{trade_analysis}
+
+STRATEGY IMPROVEMENT RECOMMENDATIONS BASED ON TRADE ANALYSIS:
+
+Based on the analysis of the best and worst trades, focus on these specific improvements:
+
+1. ENTRY CONDITIONS: 
+   - Study the market conditions that led to successful trades
+   - Avoid conditions that led to losing trades
+   - Consider volume confirmation for better entry timing
+
+2. EXIT CONDITIONS:
+   - Analyze what market conditions triggered successful exits
+   - Improve stop-loss or take-profit mechanisms
+   - Consider holding periods that worked well
+
+3. RISK MANAGEMENT:
+   - Implement better position sizing based on trade success patterns
+   - Add filters to avoid conditions that led to worst trades
+   - Consider market volatility at entry points
+
+Generate a new strategy that incorporates these specific insights from the trade analysis.
+"""
+            
+            return enhanced_feedback
+            
+        except Exception as e:
+            logger.error(f"Error generating enhanced feedback: {str(e)}")
+            # Fall back to basic feedback
+            return self.analyzer.generate_feedback_for_next_iteration(result['analysis'])
     
     def _generate_improved_strategy(self, current_strategy: Dict, feedback: str) -> Optional[Dict]:
         """Generate an improved strategy based on feedback."""
         try:
             improvement_prompt = f"""
-You are an expert quantitative analyst. Based on the performance feedback below, create an improved investment strategy.
+You are an expert quantitative analyst. Based on the performance feedback and trade analysis below, create an improved investment strategy.
 
 CURRENT STRATEGY:
 {json.dumps(current_strategy, indent=2)}
 
-PERFORMANCE FEEDBACK:
+PERFORMANCE FEEDBACK AND TRADE ANALYSIS:
 {feedback}
 
-Generate a new, improved strategy that addresses the specific issues mentioned in the feedback. The strategy should:
+Generate a new, improved strategy that addresses the specific issues mentioned in the feedback and incorporates insights from the trade analysis. The strategy should:
 
-1. Keep the same general structure but improve the conditions
-2. Address the specific weaknesses identified
-3. Implement the suggested improvements
+1. Keep the same general structure but improve the conditions based on trade performance
+2. Address the specific weaknesses identified in the analysis
+3. Implement the suggested improvements from trade analysis
 4. Use different technical indicators or thresholds where needed
+5. Incorporate patterns from successful trades and avoid patterns from losing trades
 
 CRITICAL CONDITION FORMATTING REQUIREMENTS:
 - ALL conditions must be valid Python expressions that can be evaluated directly
@@ -186,10 +438,16 @@ CRITICAL CONDITION FORMATTING REQUIREMENTS:
 - DO NOT include explanatory text, parenthetical comments, or phrases like "to identify", "indicating", "for better", etc.
 - Each condition must be a simple comparison: indicator operator number
 
+IMPORTANT: Pay special attention to the trade analysis section. Use the insights about:
+- Entry conditions that worked well vs those that didn't
+- Exit conditions that maximized profits
+- Market conditions (RSI, volume, etc.) that led to successful trades
+- Duration patterns that worked best
+
 Respond with a JSON object in this exact format:
 {{
     "name": "Improved [Original Name] v2.0",
-    "description": "Brief description of key improvements made",
+    "description": "Brief description of key improvements made based on trade analysis",
     "buy_conditions": [
         "RSI < 25",
         "Close > SMA_20",

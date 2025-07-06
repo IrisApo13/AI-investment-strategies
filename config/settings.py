@@ -46,8 +46,9 @@ class Config:
     # feedback strategies configuration
     # no_feedback: each run generates a new strategy 
     # basic_feedback: the feedback is the performance of the last strategy 
+    # advanced_feedback: includes analysis of best and worst trades for enhanced feedback
     
-    FEEDBACK_STATEGY = "basic_feedback"
+    FEEDBACK_STATEGY = "advanced_feedback"
 
 
     # Technical Indicators

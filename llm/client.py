@@ -296,16 +296,16 @@ Make conditions very specific and executable using available technical indicator
     
     def _display_prompt(self, operation_type: str, prompt: str):
         """Display the prompt being sent to the LLM."""
-        print(f"\n{'='*80}")
-        print(f"🤖 LLM PROMPT - {operation_type}")
-        print(f"{'='*80}")
-        print(prompt)
-        print(f"{'='*80}\n")
+        logger.debug(f"\n{'='*80}")
+        logger.debug(f"🤖 LLM PROMPT - {operation_type}")
+        logger.debug(f"{'='*80}")
+        logger.debug(prompt)
+        logger.debug(f"{'='*80}\n")
     
     def _display_response(self, operation_type: str, response: str):
         """Display the response received from the LLM."""
-        print(f"\n{'='*80}")
-        print(f"🧠 LLM RESPONSE - {operation_type}")
-        print(f"{'='*80}")
-        print(response)
-        print(f"{'='*80}\n") 
+        logger.debug(f"\n{'='*80}")
+        logger.debug(f"🧠 LLM RESPONSE - {operation_type}")
+        logger.debug(f"{'='*80}")
+        logger.debug(response)
+        logger.debug(f"{'='*80}\n") 

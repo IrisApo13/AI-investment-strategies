@@ -1,243 +1,188 @@
-# This is AI 
+# AI Investment Strategies
 
-These are some experiments with AI generated code. 
+An AI-powered system for generating, backtesting, and iteratively improving investment strategies using Large Language Models (LLMs).
 
+## Features
 
+- **AI Strategy Generation**: Generate investment strategies using GPT-4
+- **Comprehensive Backtesting**: Test strategies with realistic market conditions
+- **Iterative Improvement**: Continuously improve strategies based on performance feedback
+- **Advanced Trade Analysis**: Analyze best and worst trades for enhanced feedback
+- **Performance Evaluation**: Comprehensive metrics and risk analysis
+- **Visualization**: Strategy performance charts and analysis
 
-# AI Investment Strategy Backtesting System
+## Configuration-Based Feedback Strategy
 
-An intelligent backtesting system that uses OpenAI's GPT-4 to generate, test, and iteratively improve investment strategies based on technical analysis.
+The system now supports different feedback strategies for iterative improvement, controlled by the `FEEDBACK_STRATEGY` configuration setting.
 
-## 🚀 Features
+### Available Feedback Strategies
 
-- **AI-Powered Strategy Generation**: Uses GPT-4 to create investment strategies based on market data analysis
-- **Comprehensive Backtesting**: Realistic portfolio simulation with transaction costs and slippage
-- **Iterative Improvement**: AI learns from performance feedback to generate better strategies
-- **Technical Analysis**: 15+ technical indicators including RSI, MACD, Bollinger Bands, and more
-- **Performance Evaluation**: Comprehensive metrics including Sharpe ratio, drawdown, win rate, and custom scoring
-- **User-Friendly Interface**: CLI application with interactive and command-line modes
-- **Session Management**: Save and load backtesting sessions for later analysis
+1. **`basic_feedback`** (default): Standard performance-based feedback
+   - Uses performance metrics and analysis
+   - Provides general improvement suggestions
+   - Standard LLM prompts
 
-## 📋 Requirements
+2. **`advanced_feedback`**: Enhanced feedback with trade analysis
+   - Analyzes the two best and two worst trades
+   - Provides detailed market condition insights
+   - Enhanced LLM prompts with trade data
+   - More specific improvement recommendations
 
-- Python 3.8+
-- OpenAI API key
-- Internet connection for stock data retrieval
+### How to Use Advanced Feedback
 
-## 🛠️ Installation
+1. **Enable Advanced Feedback**:
+   ```python
+   # In config/settings.py
+   FEEDBACK_STRATEGY = "advanced_feedback"
+   ```
 
-1. **Clone the repository**:
+2. **Run Your Backtesting Session**:
+   ```python
+   from core.orchestrator import AIBacktestOrchestrator
+   
+   orchestrator = AIBacktestOrchestrator()
+   results = orchestrator.run_backtesting_session(
+       ticker="SPY",
+       max_iterations=3,
+       target_score=80.0
+   )
+   ```
+
+3. **The system will automatically**:
+   - Use enhanced feedback with trade analysis
+   - Provide more specific improvement suggestions
+   - Include insights from best/worst trades
+
+### Benefits of Advanced Feedback
+
+- **More Specific Improvements**: Based on actual trade performance data
+- **Data-Driven Insights**: Learn from what actually worked and didn't work
+- **Better Entry/Exit Conditions**: Understand market conditions that led to success
+- **Improved Strategy Evolution**: More targeted strategy improvements
+
+### Example Trade Analysis Output
+
+When using advanced feedback, the system provides detailed analysis like:
+
+```
+🏆 BEST PERFORMING TRADES:
+Best Trade #1:
+  Return: 15.2%
+  Duration: 45 days
+  Entry Conditions:
+    - RSI: 28.5
+    - Close: $150.25
+    - Volume: 2,500,000
+  Exit Conditions:
+    - RSI: 72.1
+    - Close: $173.15
+
+📉 WORST PERFORMING TRADES:
+Worst Trade #1:
+  Return: -8.3%
+  Duration: 12 days
+  Entry Conditions:
+    - RSI: 45.2
+    - Close: $148.75
+    - Volume: 1,800,000
+```
+
+## Installation
+
+1. Clone the repository:
    ```bash
    git clone <repository-url>
-   cd backtestai
+   cd AI-investment-strategies
    ```
 
-2. **Create and activate virtual environment**:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-3. **Install dependencies**:
+2. Install dependencies:
    ```bash
    pip install -r requirements.txt
    ```
 
-4. **Set up environment variables**:
+3. Set up environment variables:
    ```bash
-   # Create .env file
-   echo "OPENAI_API_KEY=your_openai_api_key_here" > .env
+   cp env_example.txt .env
+   # Edit .env with your OpenAI API key
    ```
 
-## 🏃‍♂️ Quick Start
+## Usage
 
-### Interactive Mode
-```bash
-python main.py
-```
-
-### Command Line Mode
-```bash
-# Analyze AAPL with default settings
-python main.py AAPL
-
-# Custom parameters
-python main.py TSLA --iterations 5 --target-score 75
-```
-
-### Test the System
-```bash
-python test_system.py
-```
-
-## 📊 Example Usage
+### Basic Usage
 
 ```python
 from core.orchestrator import AIBacktestOrchestrator
 
-# Initialize the system
+# Initialize orchestrator
 orchestrator = AIBacktestOrchestrator()
 
 # Run backtesting session
 results = orchestrator.run_backtesting_session(
-    ticker="AAPL",
+    ticker="SPY",
     max_iterations=3,
     target_score=80.0
 )
-
-# View results
-if results['success']:
-    print(results['session_summary'])
-    best_strategy = results['best_strategy']
-    best_performance = results['best_performance']
 ```
 
-## 🏗️ System Architecture
+### Using Enhanced Feedback
 
+```python
+from config.settings import Config
+
+# Enable advanced feedback
+Config.FEEDBACK_STATEGY = "advanced_feedback"
+
+# Run session with enhanced feedback
+results = orchestrator.run_backtesting_session(
+    ticker="AAPL",
+    max_iterations=5,
+    target_score=85.0
+)
 ```
-backtestai/
-├── config/           # Configuration settings
-├── data/            # Stock data retrieval and technical analysis
-├── llm/             # OpenAI integration and prompt engineering
-├── strategy/        # Investment strategy representation
-├── backtesting/     # Portfolio simulation and evaluation
-├── core/            # Main orchestrator
-├── utils/           # Utility functions
-├── main.py          # CLI application
-└── test_system.py   # Test suite
+
+### Testing Different Feedback Strategies
+
+```python
+# Test configuration options
+python3 tests/test_config_feedback_simple.py
+
+# Test enhanced improvement with trade analysis
+python3 tests/test_enhanced_improvement.py
 ```
 
-### Key Components
-
-1. **Data Provider** (`data/`): Fetches stock data using yfinance and calculates technical indicators
-2. **LLM Integration** (`llm/`): Handles OpenAI API communication, prompt engineering, and response parsing
-3. **Strategy Engine** (`strategy/`): Represents investment strategies and generates trading signals
-4. **Backtesting Engine** (`backtesting/`): Simulates portfolio performance with realistic costs
-5. **Orchestrator** (`core/`): Coordinates the entire iterative improvement process
-
-## 📈 Technical Indicators
-
-The system uses 15+ technical indicators for strategy generation:
-
-- **Moving Averages**: SMA_20, SMA_50, EMA_12, EMA_26
-- **Momentum**: RSI, MACD, MACD_signal, momentum
-- **Volatility**: Bollinger Bands (upper, middle, lower), ATR, volatility
-- **Volume**: Volume SMA, volume ratio
-- **Price**: Price change, price position
-
-## 🎯 Performance Metrics
-
-- **Returns**: Total return, annualized return, excess return over buy & hold
-- **Risk**: Volatility, maximum drawdown, Sharpe ratio, Sortino ratio
-- **Trading**: Number of trades, win rate, profit factor, time in market
-- **Scoring**: Custom performance score (0-100) with weighted metrics
-
-## 🔧 Configuration
+## Configuration
 
 Key configuration options in `config/settings.py`:
 
-```python
-# Backtesting
-INITIAL_CAPITAL = 100000.0    # Starting capital
-TRANSACTION_COST = 0.001      # 0.1% per trade
-SLIPPAGE = 0.0005            # 0.05% slippage
+- `FEEDBACK_STRATEGY`: Choose between "basic_feedback" and "advanced_feedback"
+- `OPENAI_MODEL`: LLM model to use for strategy generation
+- `MAX_ITERATIONS`: Maximum improvement iterations
+- `INITIAL_CAPITAL`: Starting portfolio value
+- `TRANSACTION_COST`: Trading fees percentage
 
-# Strategy
-MAX_POSITION_SIZE = 0.3       # Max 30% per position
-MIN_POSITION_SIZE = 0.05      # Min 5% per position
-
-# AI
-OPENAI_MODEL = "gpt-4-turbo-preview"
-MAX_TOKENS = 2000
-TEMPERATURE = 0.7
-```
-
-## 🧪 Testing
-
-Run the comprehensive test suite:
-
-```bash
-python test_system.py
-```
-
-Tests cover:
-- Strategy creation and signal generation
-- Portfolio simulation accuracy
-- Performance evaluation metrics
-- LLM response parsing
-- System integration
-
-## 📝 Example Output
+## Project Structure
 
 ```
-============================================================
-ITERATION 1 RESULTS
-============================================================
-
-Strategy: RSI Mean Reversion
-Description: Buy oversold conditions, sell overbought
-
-Key Performance Metrics:
-- Performance Score: 67.3/100
-- Total Return: 23.45%
-- Buy & Hold Return: 18.20%
-- Sharpe Ratio: 0.842
-- Max Drawdown: -12.30%
-- Win Rate: 58.3%
-- Number of Trades: 24
-
-Buy Conditions:
-  1. RSI < 30
-  2. Close > SMA_20
-  3. Volume > volume_sma * 1.2
-
-Sell Conditions:
-  1. RSI > 70
-  2. Close < SMA_20 * 0.98
+AI-investment-strategies/
+├── analysis/              # Performance analysis
+├── backtesting/           # Backtesting engine
+├── config/               # Configuration settings
+├── core/                 # Main orchestrator
+├── data/                 # Data providers
+├── llm/                  # LLM integration
+├── strategy/             # Strategy classes
+├── tests/                # Test scripts
+└── utils/                # Utility functions
 ```
 
-## 🚦 Common Issues
-
-### API Key Issues
-- Ensure OPENAI_API_KEY is set in environment or .env file
-- Verify API key has sufficient credits
-
-### Data Issues
-- Check internet connection for stock data retrieval
-- Verify ticker symbol is valid and has sufficient history
-
-### Performance Issues
-- Reduce max_iterations for faster testing
-- Use shorter data periods for development
-
-## 🔮 Future Enhancements
-
-- [ ] Multiple asset portfolio strategies
-- [ ] Options and derivatives support
-- [ ] Real-time trading integration
-- [ ] Web-based dashboard
-- [ ] Advanced machine learning models
-- [ ] Risk management optimization
-- [ ] Multi-timeframe analysis
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+3. Make your changes
+4. Add tests for new functionality
+5. Submit a pull request
 
-## ⚠️ Disclaimer
+## License
 
-This software is for educational and research purposes only. It is not financial advice. Trading involves risk and you should only trade with money you can afford to lose. Always do your own research before making investment decisions.
-
-## 📞 Support
-
-- Create an issue for bug reports or feature requests
-- Check the test suite for usage examples
-- Review the code documentation for technical details 
+This project is licensed under the MIT License - see the LICENSE file for details. 

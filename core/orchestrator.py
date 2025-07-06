@@ -12,6 +12,7 @@ from llm.client import LLMClient
 from llm.prompts import PromptGenerator  
 from llm.parser import StrategyParser
 from strategy.strategy import InvestmentStrategy
+from strategy.iterative_improvement import IterativeStrategyImprover
 from backtesting.simulator import PortfolioSimulator
 from backtesting.evaluator import PerformanceEvaluator
 from config.settings import Config
@@ -29,6 +30,7 @@ class AIBacktestOrchestrator:
         self.strategy_parser = StrategyParser()
         self.simulator = PortfolioSimulator()
         self.evaluator = PerformanceEvaluator()
+        self.iterative_improver = IterativeStrategyImprover()
         
         # Session state
         self.current_ticker = None
@@ -79,7 +81,9 @@ class AIBacktestOrchestrator:
                    #strategy_result = self._use_existing_strategy()
  
                 else:
-                    if Config.FEEDBACK_STATEGY == "basic_feedback":
+                    if Config.FEEDBACK_STATEGY == "advanced_feedback":
+                        strategy_result = self._improve_with_enhanced_feedback(iteration)
+                    elif Config.FEEDBACK_STATEGY == "basic_feedback":
                         strategy_result = self._improve_current_strategy(iteration)
                     else:
                         strategy_result = self._generate_initial_strategy()
@@ -248,6 +252,8 @@ class AIBacktestOrchestrator:
                     'success': False,
                     'error': "Failed to parse strategy from LLM response"
                 }
+
+            logger.debug(f"Strategy dict: {strategy_dict}")
             
             # Create strategy object
             strategy = InvestmentStrategy(strategy_dict)
@@ -293,6 +299,8 @@ class AIBacktestOrchestrator:
                     'error': "Failed to parse improved strategy from LLM response"
                 }
             
+            logger.debug(f"Strategy dict: {strategy_dict}")
+                
             # Create strategy object
             strategy = InvestmentStrategy(strategy_dict)
             
@@ -304,6 +312,52 @@ class AIBacktestOrchestrator:
             
         except Exception as e:
             logger.error(f"Error improving strategy: {str(e)}")
+            return {
+                'success': False,
+                'error': str(e)
+            }
+    
+    def _improve_with_enhanced_feedback(self, iteration: int) -> Dict:
+        """Improve the current strategy using enhanced feedback with trade analysis."""
+        try:
+            logger.info(f"Improving strategy with enhanced feedback for iteration {iteration}")
+            
+            # Get the last strategy and performance
+            last_strategy = self.strategy_history[-1]
+            last_performance = self.performance_history[-1]
+            
+            # Convert strategy to dictionary format for iterative improvement
+            strategy_dict = last_strategy.to_dict()
+            
+            # Use the iterative improver with enhanced feedback
+            improvement_results = self.iterative_improver.improve_strategy_iteratively(
+                initial_strategy=strategy_dict,
+                ticker=self.current_ticker,
+                period=Config.DEFAULT_PERIOD,
+                max_iterations=1  # Only do one improvement iteration
+            )
+            
+            if 'error' in improvement_results:
+                return {
+                    'success': False,
+                    'error': improvement_results['error']
+                }
+            
+            # Get the improved strategy from the results
+            improved_strategy_dict = improvement_results['best_strategy']
+            logger.debug(f"Improved strategy dict: {improved_strategy_dict}")
+
+            # Create strategy object
+            strategy = InvestmentStrategy(improved_strategy_dict)
+            
+            return {
+                'success': True,
+                'strategy': strategy,
+                'improvement_results': improvement_results
+            }
+            
+        except Exception as e:
+            logger.error(f"Error improving strategy with enhanced feedback: {str(e)}")
             return {
                 'success': False,
                 'error': str(e)
