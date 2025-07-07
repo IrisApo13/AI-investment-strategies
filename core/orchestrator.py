@@ -105,6 +105,8 @@ class AIBacktestOrchestrator:
                 
                 # Display iteration results
                 self._display_iteration_results(iteration, strategy_result, backtest_result)
+
+                time.sleep(5)
                 
                 # Check if target achieved
                 current_score = backtest_result['evaluation']['performance_score']
@@ -334,7 +336,7 @@ class AIBacktestOrchestrator:
                 initial_strategy=strategy_dict,
                 ticker=self.current_ticker,
                 period=Config.DEFAULT_PERIOD,
-                max_iterations=1  # Only do one improvement iteration
+                max_iterations=2 # Only do one improvement iteration
             )
             
             if 'error' in improvement_results:
