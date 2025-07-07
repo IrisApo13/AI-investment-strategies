@@ -28,6 +28,51 @@ The system now supports different feedback strategies for iterative improvement,
    - Enhanced LLM prompts with trade data
    - More specific improvement recommendations
 
+## Market Data Configuration Mode
+
+The system supports configurable market data presentation to the LLM through the `MARKET_DATA_MODE` setting.
+
+### Available Market Data Modes
+
+1. **`summary`**: Summarized market data analysis
+   - Pre-analyzed market conditions and recommendations
+   - Technical indicator analysis and market regime classification
+   - More concise prompts (~4,000 characters)
+   - Faster processing and lower token usage
+
+2. **`raw_data`** (default): Raw daily market data
+   - Last 50 days of prices and technical indicators
+   - Enables pattern recognition from actual data
+   - More detailed prompts (~11,000 characters)
+   - Data-driven threshold selection
+
+### How to Use Market Data Modes
+
+1. **Configure the Mode**:
+   ```python
+   # In config/settings.py
+   MARKET_DATA_MODE = "summary"  # or "raw_data"
+   ```
+
+2. **The system will automatically**:
+   - Use the configured mode for both initial strategy generation and iterative improvement
+   - Provide appropriate market data format to the LLM
+   - Maintain consistency across all strategy generation processes
+
+### Benefits of Each Mode
+
+**Summary Mode**:
+- Faster strategy generation
+- Lower API token usage
+- Clear strategy recommendations
+- Pre-analyzed market insights
+
+**Raw Data Mode**:
+- Pattern recognition from actual data
+- Data-driven threshold selection
+- Context awareness of recent market behavior
+- Flexible analysis capabilities
+
 ### How to Use Advanced Feedback
 
 1. **Enable Advanced Feedback**:
@@ -150,11 +195,22 @@ python3 tests/test_config_feedback_simple.py
 python3 tests/test_enhanced_improvement.py
 ```
 
+### Testing Market Data Modes
+
+```python
+# Test both market data modes
+python3 tests/test_market_data_config.py
+
+# Test mode switching
+python3 tests/test_switch_modes.py
+```
+
 ## Configuration
 
 Key configuration options in `config/settings.py`:
 
 - `FEEDBACK_STRATEGY`: Choose between "basic_feedback" and "advanced_feedback"
+- `MARKET_DATA_MODE`: Choose between "summary" and "raw_data" for LLM market data presentation
 - `OPENAI_MODEL`: LLM model to use for strategy generation
 - `MAX_ITERATIONS`: Maximum improvement iterations
 - `INITIAL_CAPITAL`: Starting portfolio value

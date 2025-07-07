@@ -6,4 +6,5 @@ backtest*json
 *.log
 experiments/*.png
 experiments/*.csv
+tests/
 

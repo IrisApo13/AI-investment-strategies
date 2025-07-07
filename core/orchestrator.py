@@ -105,8 +105,6 @@ class AIBacktestOrchestrator:
                 
                 # Display iteration results
                 self._display_iteration_results(iteration, strategy_result, backtest_result)
-
-                time.sleep(5)
                 
                 # Check if target achieved
                 current_score = backtest_result['evaluation']['performance_score']
@@ -233,14 +231,9 @@ class AIBacktestOrchestrator:
         try:
             logger.info("Generating initial strategy")
             
-            # Create market data summary
-            market_summary = self.prompt_generator.create_data_summary(
-                self.market_data, self.current_ticker
-            )
-            
-            # Generate prompt
+            # Generate prompt with raw market data
             prompt = self.prompt_generator.create_initial_strategy_prompt(
-                self.current_ticker, market_summary, self.stock_info
+                self.current_ticker, self.market_data, self.stock_info
             )
             
             # Generate strategy using LLM

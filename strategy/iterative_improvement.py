@@ -79,7 +79,7 @@ class IterativeStrategyImprover:
                         logger.info("Generating improved strategy based on basic feedback...")
                     
                     # Generate improved strategy
-                    improved_strategy = self._generate_improved_strategy(current_strategy, feedback)
+                    improved_strategy = self._generate_improved_strategy(current_strategy, feedback, market_data)
                     
                     logger.debug(f"Improved strategy: {improved_strategy}")
                     
@@ -411,25 +411,63 @@ Generate a new strategy that incorporates these specific insights from the trade
             # Fall back to basic feedback
             return self.analyzer.generate_feedback_for_next_iteration(result['analysis'])
     
-    def _generate_improved_strategy(self, current_strategy: Dict, feedback: str) -> Optional[Dict]:
-        """Generate an improved strategy based on feedback."""
+    def _generate_improved_strategy(self, current_strategy: Dict, feedback: str, market_data: pd.DataFrame = None) -> Optional[Dict]:
+        """Generate an improved strategy based on feedback and market data."""
         try:
+            # Create raw market data insights if provided
+            market_insights = ""
+            if market_data is not None:
+                from llm.prompts import PromptGenerator
+                prompt_gen = PromptGenerator()
+                
+                # Choose between raw data and summary based on configuration
+                if Config.MARKET_DATA_MODE == "raw_data":
+                    raw_data_text = prompt_gen._format_raw_market_data(market_data)
+                    market_insights = f"""
+
+CURRENT RAW MARKET DATA (Last 50 Days):
+=======================================
+{raw_data_text}
+
+ANALYZE THIS RAW DATA TO IMPROVE THE STRATEGY:
+- Look for patterns in price movements, RSI levels, and volume
+- Identify which conditions led to successful trades
+- Consider the current market position and recent trends
+- Adapt thresholds based on the actual data ranges you observe
+"""
+                else:
+                    market_summary = prompt_gen.create_data_summary(market_data, "current_ticker")
+                    market_summary_text = prompt_gen._format_market_summary(market_summary)
+                    market_insights = f"""
+
+CURRENT MARKET DATA INSIGHTS:
+============================
+{market_summary_text}
+
+USE THESE MARKET INSIGHTS TO IMPROVE THE STRATEGY:
+- Consider the current market regime and volatility conditions
+- Adapt to the RSI, trend, and volume patterns identified
+- Use the strategy recommendations provided above
+- Adjust thresholds based on the market analysis
+"""
+
             improvement_prompt = f"""
-You are an expert quantitative analyst. Based on the performance feedback and trade analysis below, create an improved investment strategy.
+You are an expert quantitative analyst. Based on the performance feedback, trade analysis, and current market data below, create an improved investment strategy.
 
 CURRENT STRATEGY:
 {json.dumps(current_strategy, indent=2)}
 
 PERFORMANCE FEEDBACK AND TRADE ANALYSIS:
-{feedback}
+{feedback}{market_insights}
 
-Generate a new, improved strategy that addresses the specific issues mentioned in the feedback and incorporates insights from the trade analysis. The strategy should:
+Generate a new, improved strategy that addresses the specific issues mentioned in the feedback and incorporates insights from both the trade analysis AND current market conditions. The strategy should:
 
 1. Keep the same general structure but improve the conditions based on trade performance
 2. Address the specific weaknesses identified in the analysis
 3. Implement the suggested improvements from trade analysis
 4. Use different technical indicators or thresholds where needed
 5. Incorporate patterns from successful trades and avoid patterns from losing trades
+6. Adapt to current market conditions (RSI levels, trend, volatility, volume)
 
 CRITICAL CONDITION FORMATTING REQUIREMENTS:
 - ALL conditions must be valid Python expressions that can be evaluated directly
@@ -438,16 +476,15 @@ CRITICAL CONDITION FORMATTING REQUIREMENTS:
 - DO NOT include explanatory text, parenthetical comments, or phrases like "to identify", "indicating", "for better", etc.
 - Each condition must be a simple comparison: indicator operator number
 
-IMPORTANT: Pay special attention to the trade analysis section. Use the insights about:
-- Entry conditions that worked well vs those that didn't
-- Exit conditions that maximized profits
-- Market conditions (RSI, volume, etc.) that led to successful trades
-- Duration patterns that worked best
+IMPORTANT: Pay special attention to:
+- Trade analysis section: Entry/exit conditions that worked well vs those that didn't
+- Market data insights: Current RSI levels, trend direction, volatility regime
+- Combine both insights to create optimal conditions for current market state
 
 Respond with a JSON object in this exact format:
 {{
-    "name": "Improved [Original Name] v2.0",
-    "description": "Brief description of key improvements made based on trade analysis",
+    "name": "Improved [Original Name] v2.0 (Market-Adapted)",
+    "description": "Brief description of key improvements made based on trade analysis and market conditions",
     "buy_conditions": [
         "RSI < 25",
         "Close > SMA_20",

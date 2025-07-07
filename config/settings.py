@@ -50,6 +50,12 @@ class Config:
     
     FEEDBACK_STATEGY = "advanced_feedback"
 
+    # Market data configuration
+    # summary: provide summarized market data statistics to LLM
+    # raw_data: provide raw daily market data table to LLM
+    
+    MARKET_DATA_MODE = "raw_data"
+
 
     # Technical Indicators
     TECHNICAL_INDICATORS = [
